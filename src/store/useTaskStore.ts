@@ -10,6 +10,7 @@ interface TaskStore {
   completeTask: (id: string, userId: string) => Task | null
   setInProgress: (id: string) => void
   resetDailyTasks: () => void
+  resetAllTasks: () => void
   getTasksByUser: (userId: string) => Task[]
   getTodayTasks: () => Task[]
 }
@@ -95,6 +96,8 @@ export const useTaskStore = create<TaskStore>()(
           ),
         }))
       },
+
+      resetAllTasks: () => set({ tasks: [] }),
 
       resetDailyTasks: () => {
         const today = new Date().toDateString()

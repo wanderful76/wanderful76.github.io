@@ -5,8 +5,9 @@ import type { User } from '../types'
 const defaultUsers: User[] = [
   {
     id: 'user1',
-    name: '管理员',
+    name: '雾',
     role: 'user',
+    isAdmin: true,
     pin: '1234',
     avatar: '👑',
     points: 0,
@@ -17,7 +18,7 @@ const defaultUsers: User[] = [
   },
   {
     id: 'user2',
-    name: '宝贝',
+    name: '郁',
     role: 'user',
     pin: '5678',
     avatar: '🌸',
@@ -176,6 +177,6 @@ export const useAuthStore = create<AuthStore>()(
         }))
       },
     }),
-    { name: 'forus-auth', version: 1 }
+    { name: 'forus-auth', version: 2 }
   )
 )

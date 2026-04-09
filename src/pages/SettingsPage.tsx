@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Save, Eye, EyeOff, Trash2 } from 'lucide-react'
+import { Save, Eye, EyeOff, Trash2, Plus, ShieldCheck } from 'lucide-react'
 import { useAuthStore } from '../store/useAuthStore'
 import { useTaskStore } from '../store/useTaskStore'
 import { useLotteryStore } from '../store/useLotteryStore'
-import { prizes } from '../data/prizes'
+import { usePrizeStore } from '../store/usePrizeStore'
 import { prizeCategoryConfig } from '../data/prizes'
+import { dbSet } from '../lib/supabase'
 import LoveQuoteSpot from '../components/LoveQuoteSpot'
 import { loveQuotes } from '../data/quotes'
 import type { PrizeCategory } from '../types'
@@ -16,14 +17,26 @@ export default function SettingsPage() {
   const { currentUser, users, updatePin, updateName, updateAvatar } = useAuthStore()
   const { tasks, deleteTask } = useTaskStore()
   const { records } = useLotteryStore()
+  const { prizes, addPrize, deletePrize } = usePrizeStore()
+
+  const isAdmin = currentUser?.isAdmin === true
 
   const [newPin, setNewPin]         = useState('')
   const [confirmPin, setConfirmPin] = useState('')
   const [newName, setNewName]       = useState(currentUser?.name ?? '')
   const [showPin, setShowPin]       = useState(false)
   const [toast, setToast]           = useState('')
-  const [activeTab, setActiveTab]   = useState<'profile' | 'prizes' | 'data'>('profile')
+  const [activeTab, setActiveTab]   = useState<'profile' | 'prizes' | 'data' | 'admin'>('profile')
   const [prizeFilter, setPrizeFilter] = useState<PrizeCategory | 'all'>('all')
+
+  // Admin states
+  const [adminEditId, setAdminEditId]     = useState<string | null>(null)
+  const [adminName, setAdminName]         = useState('')
+  const [adminPin, setAdminPin]           = useState('')
+  const [newPrizeName, setNewPrizeName]   = useState('')
+  const [newPrizeCat, setNewPrizeCat]     = useState<PrizeCategory>('snack')
+  const [newPrizeEmoji, setNewPrizeEmoji] = useState('')
+  const [showResetConfirm, setShowResetConfirm] = useState(false)
 
   const showToast = (msg: string) => {
     setToast(msg)
@@ -48,7 +61,7 @@ export default function SettingsPage() {
 
   const filteredPrizes = prizeFilter === 'all'
     ? prizes
-    : prizes.filter(p => p.category === prizeFilter)
+    : prizes.filter((p: { category: PrizeCategory }) => p.category === prizeFilter)
 
   const categories: PrizeCategory[] = ['snack', 'fruit', 'cash', 'privilege', 'romantic']
 
@@ -63,13 +76,18 @@ export default function SettingsPage() {
 
       {/* Tabs */}
       <div className="flex gap-2 bg-white/60 p-1 rounded-xl">
-        {([['profile','个人'],['prizes','奖池'],['data','数据']] as const).map(([tab, label]) => (
+        {([
+        ['profile','个人'] as const,
+        ['prizes','奖池'] as const,
+        ['data','数据'] as const,
+        ...(isAdmin ? [['admin','管理'] as const] : [])
+      ]).map(([tab, label]) => (
           <button key={tab} onClick={() => setActiveTab(tab)}
-            className={`flex-1 py-1.5 text-sm font-medium rounded-lg transition-all ${
+            className={`flex-1 py-1.5 text-sm font-medium rounded-lg transition-all flex items-center justify-center gap-1 ${
               activeTab === tab
                 ? 'bg-gradient-to-r from-rose-400 to-purple-400 text-white shadow-sm'
                 : 'text-gray-500 hover:text-gray-700'
-            }`}>
+            }`}>{ tab === 'admin' && <ShieldCheck size={13} />}
             {label}
           </button>
         ))}
@@ -159,8 +177,6 @@ export default function SettingsPage() {
               奖池总览（{prizes.length} 个奖项）
               <LoveQuoteSpot quote={loveQuotes[23]} icon="🎁" />
             </h2>
-
-            {/* Category filter */}
             <div className="flex flex-wrap gap-2 mb-4">
               <button onClick={() => setPrizeFilter('all')}
                 className={`badge px-3 py-1 cursor-pointer ${prizeFilter === 'all' ? 'bg-rose-500 text-white' : 'bg-gray-100 text-gray-600'}`}>
@@ -176,9 +192,8 @@ export default function SettingsPage() {
                 )
               })}
             </div>
-
             <div className="space-y-1.5 max-h-96 overflow-y-auto scrollbar-hide">
-              {filteredPrizes.map(p => {
+              {filteredPrizes.map((p: { id: number; name: string; category: PrizeCategory; emoji: string; description?: string }) => {
                 const cfg = prizeCategoryConfig[p.category]
                 return (
                   <div key={p.id} className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-rose-50/50 transition-colors">
@@ -204,7 +219,7 @@ export default function SettingsPage() {
               数据管理
               <LoveQuoteSpot quote={loveQuotes[27]} icon="💫" />
             </h2>
-            <p className="text-xs text-gray-400 mb-4">所有数据存储在本地浏览器，不会上传至任何服务器</p>
+            <p className="text-xs text-gray-400 mb-4">数据已同步至云端，双设备实时共享</p>
 
             {/* Summary */}
             <div className="grid grid-cols-3 gap-3 mb-4">
@@ -235,6 +250,115 @@ export default function SettingsPage() {
                 ))}
               </div>
             </div>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Admin tab */}
+      {activeTab === 'admin' && isAdmin && (
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+
+          {/* User management */}
+          <div className="glass-card p-5">
+            <h2 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+              <ShieldCheck size={16} className="text-purple-500" /> 用户管理
+            </h2>
+            <div className="space-y-3">
+              {users.map(u => (
+                <div key={u.id} className="border border-rose-100 rounded-xl p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-medium text-gray-700">{u.avatar} {u.name}{u.isAdmin && <span className="ml-1 text-xs text-purple-500">(管理员)</span>}</span>
+                    <button onClick={() => { setAdminEditId(adminEditId === u.id ? null : u.id); setAdminName(u.name); setAdminPin('') }}
+                      className="text-xs text-rose-400 hover:text-rose-600">
+                      {adminEditId === u.id ? '收起' : '编辑'}
+                    </button>
+                  </div>
+                  {adminEditId === u.id && (
+                    <div className="space-y-2">
+                      <input type="text" value={adminName} onChange={e => setAdminName(e.target.value)}
+                        placeholder="昵称" className="input-field text-sm py-1.5" />
+                      <input type="text" value={adminPin} onChange={e => setAdminPin(e.target.value)}
+                        placeholder="新 PIN 码（留空不修改）" className="input-field text-sm py-1.5" maxLength={8} />
+                      <button onClick={() => {
+                        if (adminName.trim()) updateName(u.id, adminName.trim())
+                        if (adminPin.length >= 4) updatePin(u.id, adminPin)
+                        setAdminEditId(null)
+                        showToast('已保存 ✅')
+                      }} className="btn-primary w-full py-1.5 text-sm flex items-center justify-center gap-1">
+                        <Save size={13} /> 保存
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Prize management */}
+          <div className="glass-card p-5">
+            <h2 className="font-semibold text-gray-700 mb-3">奖池管理</h2>
+            <div className="flex gap-2 mb-3">
+              <input type="text" value={newPrizeEmoji} onChange={e => setNewPrizeEmoji(e.target.value)}
+                placeholder="emoji" className="input-field w-16 text-center text-lg py-1.5" maxLength={2} />
+              <input type="text" value={newPrizeName} onChange={e => setNewPrizeName(e.target.value)}
+                placeholder="奖项名称" className="input-field flex-1 py-1.5 text-sm" />
+              <select value={newPrizeCat} onChange={e => setNewPrizeCat(e.target.value as PrizeCategory)}
+                className="input-field w-24 py-1.5 text-sm">
+                {categories.map(c => <option key={c} value={c}>{prizeCategoryConfig[c].label}</option>)}
+              </select>
+              <button onClick={() => {
+                if (!newPrizeName.trim() || !newPrizeEmoji.trim()) { showToast('请填写名称和 emoji'); return }
+                addPrize(newPrizeName.trim(), newPrizeCat, newPrizeEmoji.trim())
+                setNewPrizeName(''); setNewPrizeEmoji('')
+                showToast('奖项已添加 ✅')
+              }} className="btn-primary px-3 py-1.5">
+                <Plus size={16} />
+              </button>
+            </div>
+            <div className="space-y-1 max-h-64 overflow-y-auto scrollbar-hide">
+              {prizes.map((p: { id: number; name: string; category: PrizeCategory; emoji: string }) => (
+                <div key={p.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-rose-50/50">
+                  <span>{p.emoji}</span>
+                  <span className="flex-1 text-sm text-gray-700 truncate">{p.name}</span>
+                  <span className={`badge text-xs ${prizeCategoryConfig[p.category].bg} ${prizeCategoryConfig[p.category].color}`}>
+                    {prizeCategoryConfig[p.category].label}
+                  </span>
+                  <button onClick={() => { deletePrize(p.id); showToast('已删除') }}
+                    className="p-1 text-red-300 hover:text-red-500 transition-colors">
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Data reset */}
+          <div className="glass-card p-5">
+            <h2 className="font-semibold text-gray-700 mb-2">危险操作</h2>
+            {!showResetConfirm ? (
+              <button onClick={() => setShowResetConfirm(true)}
+                className="w-full py-2.5 rounded-xl bg-red-50 text-red-500 text-sm font-medium hover:bg-red-100 transition-colors">
+                🗑️ 清空所有数据（恢复出厂）
+              </button>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-sm text-red-500 text-center">确定要清空所有任务、抽奖记录和用户数据吗？</p>
+                <div className="flex gap-2">
+                  <button onClick={() => setShowResetConfirm(false)}
+                    className="flex-1 py-2 rounded-xl bg-gray-100 text-gray-600 text-sm">取消</button>
+                  <button onClick={async () => {
+                    useTaskStore.getState().resetAllTasks?.()
+                    useLotteryStore.getState().clearRecords?.()
+                    await Promise.all([
+                      dbSet('forus-tasks', { tasks: [] }),
+                      dbSet('forus-lottery', { records: [] }),
+                    ])
+                    setShowResetConfirm(false)
+                    showToast('数据已清空 ✅')
+                  }} className="flex-1 py-2 rounded-xl bg-red-500 text-white text-sm font-medium">确认清空</button>
+                </div>
+              </div>
+            )}
           </div>
         </motion.div>
       )}

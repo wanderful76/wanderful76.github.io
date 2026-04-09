@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import type { LotteryRecord, PrizeCategory } from '../types'
-import { prizes } from '../data/prizes'
+import { usePrizeStore } from './usePrizeStore'
 
 interface LotteryStore {
   records: LotteryRecord[]
@@ -10,6 +10,7 @@ interface LotteryStore {
   getRecordsByUser: (userId: string) => LotteryRecord[]
   getStatsByCategory: (userId?: string) => Record<PrizeCategory, number>
   getTotalDraws: (userId?: string) => number
+  clearRecords: () => void
 }
 
 export const useLotteryStore = create<LotteryStore>()(
@@ -18,7 +19,8 @@ export const useLotteryStore = create<LotteryStore>()(
       records: [],
 
       draw: (userId, userName) => {
-        const prize = prizes[Math.floor(Math.random() * prizes.length)]
+        const allPrizes = usePrizeStore.getState().prizes
+        const prize = allPrizes[Math.floor(Math.random() * allPrizes.length)]
         const record: LotteryRecord = {
           id: `draw-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
           prizeId: prize.id,
@@ -56,6 +58,8 @@ export const useLotteryStore = create<LotteryStore>()(
         records.forEach(r => { stats[r.prizeCategory]++ })
         return stats
       },
+
+      clearRecords: () => set({ records: [] }),
 
       getTotalDraws: (userId) => {
         const records = userId

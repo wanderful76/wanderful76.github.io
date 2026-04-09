@@ -43,6 +43,7 @@ export interface User {
   id: string
   name: string
   role: 'user'
+  isAdmin?: boolean
   pin: string
   avatar: string
   points: number

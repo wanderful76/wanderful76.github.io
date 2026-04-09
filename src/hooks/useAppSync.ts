@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useAuthStore } from '../store/useAuthStore'
 import { useTaskStore } from '../store/useTaskStore'
 import { useLotteryStore } from '../store/useLotteryStore'
+import { usePrizeStore } from '../store/usePrizeStore'
 import { supabase, dbGet, dbSet } from '../lib/supabase'
 import type { User } from '../types'
 
@@ -40,6 +41,11 @@ function applyRemote(key: string, value: unknown) {
       if (!v.records) return
       useLotteryStore.setState({ records: v.records as never })
     }
+    if (key === 'forus-prizes') {
+      const v = value as { prizes: unknown[] }
+      if (!v.prizes) return
+      usePrizeStore.setState({ prizes: v.prizes as never })
+    }
   } finally {
     setTimeout(() => { syncing = false }, 200)
   }
@@ -47,10 +53,11 @@ function applyRemote(key: string, value: unknown) {
 
 async function fullSync() {
   try {
-    const [auth, tasks, lottery] = await Promise.all([
+    const [auth, tasks, lottery, prizes] = await Promise.all([
       dbGet('forus-auth'),
       dbGet('forus-tasks'),
       dbGet('forus-lottery'),
+      dbGet('forus-prizes'),
     ])
     if (auth) applyRemote('forus-auth', auth)
     else {
@@ -59,6 +66,7 @@ async function fullSync() {
     }
     if (tasks) applyRemote('forus-tasks', tasks)
     if (lottery) applyRemote('forus-lottery', lottery)
+    if (prizes) applyRemote('forus-prizes', prizes)
   } catch (e) {
     console.warn('[sync] initial sync failed:', e)
   }
@@ -77,6 +85,9 @@ export function useAppSync() {
     const unsubLottery = useLotteryStore.subscribe(state => {
       schedPush('forus-lottery', () => ({ records: state.records }))
     })
+    const unsubPrizes = usePrizeStore.subscribe(state => {
+      schedPush('forus-prizes', () => ({ prizes: state.prizes }))
+    })
 
     const channel = supabase
       .channel('forus-sync')
@@ -94,6 +105,7 @@ export function useAppSync() {
       unsubAuth()
       unsubTasks()
       unsubLottery()
+      unsubPrizes()
       supabase.removeChannel(channel)
     }
   }, [])
