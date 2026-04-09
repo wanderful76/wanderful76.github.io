@@ -78,7 +78,7 @@ export default function SettingsPage() {
       <div className="flex gap-2 bg-white/60 p-1 rounded-xl">
         {([
         ['profile','个人'] as const,
-        ['prizes','奖池'] as const,
+        ...(isAdmin ? [['prizes','奖池'] as const] : []),
         ['data','数据'] as const,
         ...(isAdmin ? [['admin','管理'] as const] : [])
       ]).map(([tab, label]) => (

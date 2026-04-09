@@ -40,11 +40,11 @@ export default function TasksPage() {
     if (!currentUser) return
     const task = completeTask(id, currentUser.id)
     if (task) {
-      addTickets(currentUser.id, task.points)
+      addTickets(currentUser.id, 1)
       addPoints(currentUser.id, task.points * 10)
       updateStreak(currentUser.id)
       incrementTasksCompleted(currentUser.id)
-      showToast(`获得 ${task.points} 张抽奖券！`, '🎟️')
+      showToast('获得 1 张抽奖券！', '🎟️')
     }
   }
 
@@ -126,7 +126,7 @@ export default function TasksPage() {
                       {categoryConfig[task.category].emoji} {categoryConfig[task.category].label}
                     </span>
                     <span className="badge bg-gray-100 text-gray-500">{repeatConfig[task.repeat]}</span>
-                    <span className="badge bg-amber-50 text-amber-500">+{task.points}🎟</span>
+                    <span className="badge bg-amber-50 text-amber-500">🎟 +1</span>
                   </div>
                   <p className={`font-medium text-gray-800 mt-1.5 ${task.status === 'completed' ? 'line-through' : ''}`}>
                     {task.title}
@@ -227,18 +227,10 @@ export default function TasksPage() {
                     </select>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">奖励券数 🎟</label>
-                    <input type="number" min={1} max={10} value={form.points}
-                      onChange={e => setForm(f => ({ ...f, points: Number(e.target.value) }))}
-                      className="input-field" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-600 mb-1">截止日期</label>
-                    <input type="date" value={form.deadline} onChange={e => setForm(f => ({ ...f, deadline: e.target.value }))}
-                      className="input-field" />
-                  </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">截止日期</label>
+                  <input type="date" value={form.deadline} onChange={e => setForm(f => ({ ...f, deadline: e.target.value }))}
+                    className="input-field" />
                 </div>
                 <div className="flex gap-3 pt-1">
                   <button type="button" onClick={() => setShowForm(false)} className="btn-secondary flex-1">取消</button>
