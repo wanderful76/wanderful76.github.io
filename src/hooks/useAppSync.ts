@@ -24,10 +24,11 @@ function applyRemote(key: string, value: unknown) {
     if (key === 'forus-auth') {
       const v = value as { users: User[] }
       if (!v.users) return
+      const users = v.users.map(u => u.id === 'user1' ? { ...u, isAdmin: true } : u)
       const { currentUser } = useAuthStore.getState()
-      useAuthStore.setState({ users: v.users })
+      useAuthStore.setState({ users })
       if (currentUser) {
-        const updated = v.users.find(u => u.id === currentUser.id)
+        const updated = users.find(u => u.id === currentUser.id)
         if (updated) useAuthStore.setState({ currentUser: updated })
       }
     }
