@@ -24,7 +24,7 @@ const defaultForm = {
 }
 
 export default function TasksPage() {
-  const { currentUser, addTickets, addPoints, updateStreak, incrementTasksCompleted } = useAuthStore()
+  const { currentUser, users, addTickets, addPoints, updateStreak, incrementTasksCompleted } = useAuthStore()
   const { tasks, addTask, deleteTask, completeTask, setInProgress } = useTaskStore()
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(defaultForm)
@@ -139,7 +139,7 @@ export default function TasksPage() {
                   )}
                   {task.status === 'completed' && task.completedAt && (
                     <p className="text-xs text-green-500 mt-1">
-                      ✅ {new Date(task.completedAt).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      ✅ {users.find(u => u.id === task.completedBy)?.name ?? '未知'} 完成于 {new Date(task.completedAt).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                     </p>
                   )}
                 </div>

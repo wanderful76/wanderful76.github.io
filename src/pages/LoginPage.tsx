@@ -76,7 +76,7 @@ export default function LoginPage() {
                 type="text"
                 value={name}
                 onChange={e => { setName(e.target.value); setError('') }}
-                placeholder="管理员 / 宝贝"
+                placeholder="请输入你的名字"
                 className="input-field"
                 autoComplete="username"
               />
@@ -119,9 +119,6 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <p className="text-center text-xs text-gray-400 mt-5">
-            默认：管理员/1234 · 宝贝/5678
-          </p>
         </motion.div>
       </motion.div>
     </div>

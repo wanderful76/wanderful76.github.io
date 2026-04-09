@@ -41,11 +41,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Fixed love quote spots at page corners */}
-      <LoveQuoteSpot quote={cornerQuotes[0]} position="top-left"     icon="✨" />
-      <LoveQuoteSpot quote={cornerQuotes[1]} position="top-right"    icon="🌸" />
-      <LoveQuoteSpot quote={cornerQuotes[2]} position="bottom-left"  icon="💫" />
-      <LoveQuoteSpot quote={cornerQuotes[3]} position="bottom-right" icon="🌙" />
+      {/* Fixed love quote spots at page corners - hidden on mobile */}
+      <div className="hidden sm:block">
+        <LoveQuoteSpot quote={cornerQuotes[0]} position="top-left"     icon="✨" />
+        <LoveQuoteSpot quote={cornerQuotes[1]} position="top-right"    icon="🌸" />
+        <LoveQuoteSpot quote={cornerQuotes[2]} position="bottom-left"  icon="💫" />
+        <LoveQuoteSpot quote={cornerQuotes[3]} position="bottom-right" icon="🌙" />
+      </div>
 
       {/* Top header */}
       <header className="sticky top-0 z-30 bg-white/70 backdrop-blur-md border-b border-rose-100/60 shadow-sm">
