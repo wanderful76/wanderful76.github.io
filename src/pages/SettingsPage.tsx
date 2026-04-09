@@ -316,7 +316,7 @@ export default function SettingsPage() {
               </button>
             </div>
             <div className="space-y-1 max-h-64 overflow-y-auto scrollbar-hide">
-              {prizes.map((p: { id: number; name: string; category: PrizeCategory; emoji: string }) => (
+              {[...prizes].sort((a, b) => categories.indexOf(a.category) - categories.indexOf(b.category)).map((p: { id: number; name: string; category: PrizeCategory; emoji: string }) => (
                 <div key={p.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-rose-50/50">
                   <span>{p.emoji}</span>
                   <span className="flex-1 text-sm text-gray-700 truncate">{p.name}</span>
