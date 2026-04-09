@@ -47,6 +47,7 @@ interface AuthStore {
   markPartnerDrawSeen: (userId: string) => void
   markAchievementSeen: (userId: string, achievementId: string) => void
   resetSeenAchievements: (userId: string) => void
+  setTotalTasksCompleted: (userId: string, count: number) => void
 }
 
 export const useAuthStore = create<AuthStore>()(
@@ -200,6 +201,20 @@ export const useAuthStore = create<AuthStore>()(
         set(state => {
           const updatedUsers = state.users.map(u =>
             u.id === userId ? { ...u, seenAchievements: [] } : u
+          )
+          return {
+            users: updatedUsers,
+            currentUser: state.currentUser?.id === userId
+              ? updatedUsers.find(u => u.id === userId) ?? state.currentUser
+              : state.currentUser,
+          }
+        })
+      },
+
+      setTotalTasksCompleted: (userId, count) => {
+        set(state => {
+          const updatedUsers = state.users.map(u =>
+            u.id === userId ? { ...u, totalTasksCompleted: count } : u
           )
           return {
             users: updatedUsers,
