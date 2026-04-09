@@ -79,7 +79,7 @@ export default function LotteryPage() {
                   phase === 'opening'
                     ? 'scale-90 opacity-30'
                     : 'hover:scale-105 hover:shadow-rose-200/60'
-                } bg-gradient-to-br from-rose-400 via-pink-400 to-purple-400`}>
+                }`} style={{ background: 'linear-gradient(135deg, #fb7185 0%, #e879f9 50%, #a855f7 100%)' }}>
                   <div className="text-center">
                     {phase === 'idle' && (
                       <>
