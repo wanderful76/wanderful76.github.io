@@ -19,7 +19,7 @@ export default function SettingsPage() {
   const { records } = useLotteryStore()
   const { prizes, addPrize, deletePrize } = usePrizeStore()
 
-  const isAdmin = currentUser?.isAdmin === true
+  const isAdmin = users.find(u => u.id === currentUser?.id)?.isAdmin === true
 
   const [newPin, setNewPin]         = useState('')
   const [confirmPin, setConfirmPin] = useState('')

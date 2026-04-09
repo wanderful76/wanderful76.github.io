@@ -61,8 +61,12 @@ async function fullSync() {
     ])
     if (auth) applyRemote('forus-auth', auth)
     else {
-      const { users } = useAuthStore.getState()
+      const { users, currentUser } = useAuthStore.getState()
       dbSet('forus-auth', { users }).catch(console.warn)
+      if (currentUser) {
+        const fresh = users.find(u => u.id === currentUser.id)
+        if (fresh) useAuthStore.setState({ currentUser: fresh })
+      }
     }
     if (tasks) applyRemote('forus-tasks', tasks)
     if (lottery) applyRemote('forus-lottery', lottery)
