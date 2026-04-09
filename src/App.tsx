@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from './store/useAuthStore'
 import { useTaskStore } from './store/useTaskStore'
+import { useAppSync } from './hooks/useAppSync'
 import Layout from './components/Layout'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
@@ -19,6 +20,7 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
 export default function App() {
   const { currentUser } = useAuthStore()
   const { resetDailyTasks } = useTaskStore()
+  useAppSync()
 
   useEffect(() => {
     resetDailyTasks()
