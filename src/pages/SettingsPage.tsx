@@ -9,9 +9,45 @@ import { prizeCategoryConfig } from '../data/prizes'
 import { dbSet } from '../lib/supabase'
 import LoveQuoteSpot from '../components/LoveQuoteSpot'
 import { loveQuotes } from '../data/quotes'
+import { achievements, BADGE_IMAGES_PATH } from '../data/achievements'
+import type { Achievement } from '../data/achievements'
 import type { PrizeCategory } from '../types'
 
 const avatarOptions = ['👑','🌸','🐼','🦊','🐰','🌙','⭐','🦋','🌺','🎀','🍀','🌈']
+
+function BadgeThumb({ a, unlocked }: { a: Achievement; unlocked: boolean }) {
+  const [imgErr, setImgErr] = useState(false)
+  return (
+    <div title={`${a.title}：${a.desc}`}
+      className={`w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden transition-all ${
+        unlocked
+          ? 'bg-gradient-to-br from-amber-50 to-yellow-100 border-2 border-amber-300 shadow-sm'
+          : 'bg-gray-100 border-2 border-gray-200 opacity-30 grayscale'
+      }`}>
+      {!imgErr ? (
+        <img src={`${BADGE_IMAGES_PATH}${a.imageFile}`} alt={a.title}
+          className="w-full h-full object-cover" onError={() => setImgErr(true)} />
+      ) : (
+        <span className="text-2xl">{a.emoji}</span>
+      )}
+    </div>
+  )
+}
+
+function BadgesSection({ tasks, streak, draws }: { tasks: number; streak: number; draws: number }) {
+  const unlocked = achievements.filter(a => a.check(tasks, streak, draws))
+  return (
+    <div className="glass-card p-5">
+      <h2 className="font-semibold text-gray-700 mb-1">我的成就徽章</h2>
+      <p className="text-xs text-gray-400 mb-3">已获得 {unlocked.length} / {achievements.length} 枚</p>
+      <div className="flex flex-wrap gap-2">
+        {achievements.map(a => (
+          <BadgeThumb key={a.id} a={a} unlocked={a.check(tasks, streak, draws)} />
+        ))}
+      </div>
+    </div>
+  )
+}
 
 export default function SettingsPage() {
   const { currentUser, users, updatePin, updateName, updateAvatar } = useAuthStore()
@@ -166,6 +202,9 @@ export default function SettingsPage() {
               </div>
             </div>
           )}
+
+          {/* My badges */}
+          <BadgesSection tasks={currentUser?.totalTasksCompleted ?? 0} streak={currentUser?.streak ?? 0} draws={records.filter(r => r.userId === currentUser?.id).length} />
         </motion.div>
       )}
 

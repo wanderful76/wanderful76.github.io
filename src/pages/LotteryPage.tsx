@@ -5,6 +5,8 @@ import { useLotteryStore } from '../store/useLotteryStore'
 import { prizeCategoryConfig } from '../data/prizes'
 import LoveQuoteSpot from '../components/LoveQuoteSpot'
 import { loveQuotes } from '../data/quotes'
+import { useAchievementNotify } from '../hooks/useAchievementNotify'
+import AchievementPopup from '../components/AchievementPopup'
 import type { LotteryRecord } from '../types'
 
 type Phase = 'idle' | 'shaking' | 'opening' | 'revealed'
@@ -16,6 +18,13 @@ export default function LotteryPage() {
   const [result, setResult] = useState<LotteryRecord | null>(null)
   const [error, setError] = useState('')
   const myRecords = records.filter(r => r.userId === currentUser?.id)
+
+  const { current: newAch, dismiss: dismissAch } = useAchievementNotify(
+    currentUser?.totalTasksCompleted ?? 0,
+    currentUser?.streak ?? 0,
+    myRecords.length,
+    currentUser?.id ?? ''
+  )
 
   const handleDraw = async () => {
     if (!currentUser) return
@@ -203,6 +212,7 @@ export default function LotteryPage() {
           </div>
         )}
       </div>
+      <AchievementPopup achievement={newAch} onClose={dismissAch} />
     </div>
   )
 }

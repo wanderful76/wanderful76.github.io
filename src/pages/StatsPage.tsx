@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { useAuthStore } from '../store/useAuthStore'
 import { useTaskStore } from '../store/useTaskStore'
@@ -5,17 +6,28 @@ import { useLotteryStore } from '../store/useLotteryStore'
 import { prizeCategoryConfig } from '../data/prizes'
 import LoveQuoteSpot from '../components/LoveQuoteSpot'
 import { loveQuotes } from '../data/quotes'
+import { achievements, BADGE_IMAGES_PATH } from '../data/achievements'
+import type { Achievement } from '../data/achievements'
 import type { PrizeCategory } from '../types'
 
-const achievements = [
-  { id: 'first_task',   emoji: '🌱', title: '万事开头难',   desc: '完成第一个任务',      check: (n: number) => n >= 1  },
-  { id: 'ten_tasks',    emoji: '⭐', title: '勤奋学者',     desc: '累计完成 10 个任务',  check: (n: number) => n >= 10 },
-  { id: 'fifty_tasks',  emoji: '🏆', title: '任务达人',     desc: '累计完成 50 个任务',  check: (n: number) => n >= 50 },
-  { id: 'streak_3',     emoji: '🔥', title: '三日坚持',     desc: '连续完成任务 3 天',   check: (_: number, s: number) => s >= 3  },
-  { id: 'streak_7',     emoji: '💎', title: '一周不间断',   desc: '连续完成任务 7 天',   check: (_: number, s: number) => s >= 7  },
-  { id: 'first_draw',   emoji: '🎁', title: '第一个惊喜',   desc: '进行第一次抽奖',      check: (_: number, __: number, d: number) => d >= 1  },
-  { id: 'ten_draws',    emoji: '🎰', title: '抽奖爱好者',   desc: '累计抽奖 10 次',      check: (_: number, __: number, d: number) => d >= 10 },
-]
+function BadgeIcon({ achievement: a, unlocked, size = 10 }: { achievement: Achievement; unlocked: boolean; size?: number }) {
+  const [imgErr, setImgErr] = useState(false)
+  return (
+    <div className={`w-${size} h-${size} rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden
+      ${unlocked ? 'bg-gradient-to-br from-amber-50 to-yellow-100 border border-amber-200' : 'bg-gray-100 border border-gray-200'}`}>
+      {!imgErr ? (
+        <img
+          src={`${BADGE_IMAGES_PATH}${a.imageFile}`}
+          alt={a.title}
+          className={`w-full h-full object-cover ${unlocked ? '' : 'grayscale opacity-40'}`}
+          onError={() => setImgErr(true)}
+        />
+      ) : (
+        <span className={`text-xl ${unlocked ? '' : 'grayscale opacity-40'}`}>{a.emoji}</span>
+      )}
+    </div>
+  )
+}
 
 const stagger = {
   hidden: {},
@@ -129,10 +141,14 @@ export default function StatsPage() {
 
       {/* Achievements */}
       <motion.div variants={item} className="glass-card p-5">
-        <h2 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
+        <h2 className="font-semibold text-gray-700 mb-1 flex items-center gap-2">
           🏅 成就徽章
           <LoveQuoteSpot quote={loveQuotes[24]} icon="⭐" />
+          <span className="ml-auto text-xs text-gray-400">
+            {achievements.filter(a => a.check(myTasks, myStreak, myDraws)).length} / {achievements.length}
+          </span>
         </h2>
+        <p className="text-xs text-gray-400 mb-4">集满所有徽章可解锁隐藏大奖 👀</p>
         <div className="grid grid-cols-2 gap-2.5">
           {achievements.map(a => {
             const unlocked = a.check(myTasks, myStreak, myDraws)
@@ -142,7 +158,7 @@ export default function StatsPage() {
                   ? 'bg-gradient-to-r from-rose-50 to-purple-50 border border-rose-200/50'
                   : 'bg-gray-50 opacity-50'
               }`}>
-                <span className={`text-2xl ${unlocked ? '' : 'grayscale'}`}>{a.emoji}</span>
+                <BadgeIcon achievement={a} unlocked={unlocked} size={10} />
                 <div className="min-w-0">
                   <p className={`text-xs font-semibold truncate ${unlocked ? 'text-gray-800' : 'text-gray-400'}`}>{a.title}</p>
                   <p className="text-xs text-gray-400 truncate">{a.desc}</p>
@@ -151,6 +167,38 @@ export default function StatsPage() {
             )
           })}
         </div>
+
+        {/* Grand prize hint – shown when all unlocked */}
+        {achievements.every(a => a.check(myTasks, myStreak, myDraws)) ? (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ type: 'spring', stiffness: 200, damping: 15 }}
+            className="mt-4 rounded-2xl p-4 text-center relative overflow-hidden"
+            style={{ background: 'linear-gradient(135deg, #f59e0b 0%, #f97316 40%, #ec4899 100%)' }}
+          >
+            <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 20% 20%, #fff 1px, transparent 1px), radial-gradient(circle at 80% 80%, #fff 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+            <div className="relative">
+              <div className="text-3xl mb-1">🎉</div>
+              <p className="text-white font-bold text-base">成就全满！神秘大奖已解锁</p>
+              <p className="text-white/80 text-xs mt-0.5 mb-3">截图并发给对方，一起去领取属于你们的奖励 💪</p>
+              <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-2xl px-5 py-2.5">
+                <span className="text-2xl">�</span>
+                <div className="text-left">
+                  <p className="text-white/70 text-xs">奖励金额</p>
+                  <p className="text-white font-black text-2xl tracking-widest">¥ ? ? ? . ?</p>
+                </div>
+              </div>
+              <p className="text-white/60 text-xs mt-2">「记住彼此约定过的那个数字」</p>
+            </div>
+          </motion.div>
+        ) : (
+          /* Hint card when not yet complete */
+          <div className="mt-4 rounded-2xl p-3 bg-gray-50 border border-dashed border-gray-200 text-center">
+            <p className="text-xs text-gray-400">🔒 集满全部 {achievements.length} 枚徽章，解锁一份隐藏的特别奖励</p>
+            <p className="text-xs text-gray-300 mt-0.5">「某个你们都懂的数字…」</p>
+          </div>
+        )}
       </motion.div>
 
       {/* Partner comparison */}

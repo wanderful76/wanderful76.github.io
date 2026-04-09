@@ -3,8 +3,11 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Trash2, CheckCircle2, PlayCircle, RotateCcw, X } from 'lucide-react'
 import { useAuthStore } from '../store/useAuthStore'
 import { useTaskStore } from '../store/useTaskStore'
+import { useLotteryStore } from '../store/useLotteryStore'
 import LoveQuoteSpot from '../components/LoveQuoteSpot'
 import { loveQuotes } from '../data/quotes'
+import { useAchievementNotify } from '../hooks/useAchievementNotify'
+import AchievementPopup from '../components/AchievementPopup'
 import type { TaskCategory, TaskRepeat } from '../types'
 
 const categoryConfig: Record<TaskCategory, { label: string; emoji: string; color: string }> = {
@@ -26,6 +29,15 @@ const defaultForm = {
 export default function TasksPage() {
   const { currentUser, users, addTickets, addPoints, updateStreak, incrementTasksCompleted } = useAuthStore()
   const { tasks, addTask, deleteTask, completeTask, setInProgress } = useTaskStore()
+  const { records } = useLotteryStore()
+
+  const myDraws = records.filter(r => r.userId === currentUser?.id).length
+  const { current: newAch, dismiss: dismissAch } = useAchievementNotify(
+    currentUser?.totalTasksCompleted ?? 0,
+    currentUser?.streak ?? 0,
+    myDraws,
+    currentUser?.id ?? ''
+  )
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(defaultForm)
   const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('all')
@@ -258,6 +270,8 @@ export default function TasksPage() {
 
       {/* Unused import suppression */}
       <span className="hidden"><RotateCcw size={1} /></span>
+
+      <AchievementPopup achievement={newAch} onClose={dismissAch} />
     </div>
   )
 }
