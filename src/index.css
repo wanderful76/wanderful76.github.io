@@ -1,0 +1,98 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    @apply bg-rose-50 font-sans antialiased;
+    background: linear-gradient(135deg, #fce7f3 0%, #f3e8ff 50%, #fce7f3 100%);
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-sm border border-white/50 shadow-lg rounded-2xl;
+  }
+  .btn-primary {
+    @apply bg-gradient-to-r from-rose-400 to-purple-400 text-white font-semibold
+           px-4 py-2 rounded-xl shadow-md hover:shadow-lg hover:from-rose-500 hover:to-purple-500
+           transition-all duration-200 active:scale-95;
+  }
+  .btn-secondary {
+    @apply bg-white/80 text-rose-500 font-semibold border border-rose-200
+           px-4 py-2 rounded-xl shadow-sm hover:shadow-md hover:bg-rose-50
+           transition-all duration-200 active:scale-95;
+  }
+  .btn-ghost {
+    @apply text-rose-400 hover:text-rose-600 hover:bg-rose-50 px-3 py-2 rounded-xl
+           transition-all duration-200 active:scale-95;
+  }
+  .input-field {
+    @apply w-full bg-white/80 border border-rose-200 rounded-xl px-4 py-3
+           text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2
+           focus:ring-rose-300 focus:border-transparent transition-all duration-200;
+  }
+  .badge {
+    @apply inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium;
+  }
+}
+
+@layer utilities {
+  .text-gradient {
+    @apply bg-gradient-to-r from-rose-500 to-purple-500 bg-clip-text text-transparent;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Love quote spot animation */
+.quote-spot {
+  cursor: default;
+  transition: transform 0.2s ease;
+}
+.quote-spot:hover {
+  transform: scale(1.2);
+}
+.quote-tooltip {
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+/* Blind box animation */
+@keyframes shake {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  10% { transform: translateX(-4px) rotate(-2deg); }
+  20% { transform: translateX(4px) rotate(2deg); }
+  30% { transform: translateX(-4px) rotate(-1deg); }
+  40% { transform: translateX(4px) rotate(1deg); }
+  50% { transform: translateX(-2px) rotate(-0.5deg); }
+  60% { transform: translateX(2px) rotate(0.5deg); }
+  70% { transform: translateX(-1px) rotate(0deg); }
+}
+.shake {
+  animation: shake 0.6s ease-in-out;
+}
+
+@keyframes openBox {
+  0% { transform: scaleY(1) translateY(0); opacity: 1; }
+  50% { transform: scaleY(0.1) translateY(20px); opacity: 0.5; }
+  100% { transform: scaleY(0) translateY(40px); opacity: 0; }
+}
+.open-box {
+  animation: openBox 0.4s ease-in forwards;
+}
+
+/* Confetti particles */
+@keyframes confettiFall {
+  0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100px) rotate(360deg); opacity: 0; }
+}
