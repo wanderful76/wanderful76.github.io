@@ -7,6 +7,8 @@ import { useTaskStore } from '../store/useTaskStore'
 import { useLotteryStore } from '../store/useLotteryStore'
 import { prizeCategoryConfig } from '../data/prizes'
 import LoveQuoteSpot from '../components/LoveQuoteSpot'
+import DailyPoem from '../components/DailyPoem'
+import CoupleGrowth from '../components/CoupleGrowth'
 import { loveQuotes } from '../data/quotes'
 
 const stagger = {
@@ -109,6 +111,16 @@ export default function DashboardPage() {
         ))}
       </motion.div>
 
+      {/* Daily poem */}
+      <motion.div variants={item}>
+        <DailyPoem />
+      </motion.div>
+
+      {/* Couple growth */}
+      <motion.div variants={item}>
+        <CoupleGrowth />
+      </motion.div>
+
       {/* Quick actions */}
       <motion.div variants={item} className="grid grid-cols-2 gap-3">
         <button
@@ -168,7 +180,7 @@ export default function DashboardPage() {
                 <span className={`text-sm flex-1 ${task.status === 'completed' ? 'line-through text-gray-400' : 'text-gray-700'}`}>
                   {task.title}
                 </span>
-                <span className="text-xs text-amber-500 font-medium">+{task.points}🎟</span>
+                <span className="text-xs text-amber-500 font-medium">🎟 +1</span>
               </div>
             ))}
           </div>
