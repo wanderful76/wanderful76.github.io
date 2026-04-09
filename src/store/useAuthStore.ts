@@ -45,6 +45,8 @@ interface AuthStore {
   updateAvatar: (userId: string, newAvatar: string) => void
   getUser: (userId: string) => User | undefined
   markPartnerDrawSeen: (userId: string) => void
+  markAchievementSeen: (userId: string, achievementId: string) => void
+  resetSeenAchievements: (userId: string) => void
 }
 
 export const useAuthStore = create<AuthStore>()(
@@ -175,6 +177,37 @@ export const useAuthStore = create<AuthStore>()(
             ? { ...state.currentUser, lastSeenPartnerDrawAt: now }
             : state.currentUser,
         }))
+      },
+
+      markAchievementSeen: (userId, achievementId) => {
+        set(state => {
+          const updatedUsers = state.users.map(u => {
+            if (u.id !== userId) return u
+            const seen = u.seenAchievements ?? []
+            if (seen.includes(achievementId)) return u
+            return { ...u, seenAchievements: [...seen, achievementId] }
+          })
+          return {
+            users: updatedUsers,
+            currentUser: state.currentUser?.id === userId
+              ? updatedUsers.find(u => u.id === userId) ?? state.currentUser
+              : state.currentUser,
+          }
+        })
+      },
+
+      resetSeenAchievements: (userId) => {
+        set(state => {
+          const updatedUsers = state.users.map(u =>
+            u.id === userId ? { ...u, seenAchievements: [] } : u
+          )
+          return {
+            users: updatedUsers,
+            currentUser: state.currentUser?.id === userId
+              ? updatedUsers.find(u => u.id === userId) ?? state.currentUser
+              : state.currentUser,
+          }
+        })
       },
     }),
     {

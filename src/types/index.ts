@@ -52,6 +52,7 @@ export interface User {
   lastCheckIn?: string
   totalTasksCompleted: number
   lastSeenPartnerDrawAt?: string
+  seenAchievements?: string[]
   joinedAt: string
 }
 

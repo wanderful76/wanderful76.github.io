@@ -1,9 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { achievements, type Achievement } from '../data/achievements'
-
-function getSeenKey(userId: string) {
-  return `forus-seen-achievements-${userId}`
-}
+import { useAuthStore } from '../store/useAuthStore'
 
 export function useAchievementNotify(
   tasks: number,
@@ -11,23 +8,22 @@ export function useAchievementNotify(
   draws: number,
   userId: string
 ) {
+  const { users, markAchievementSeen } = useAuthStore()
   const [queue, setQueue] = useState<Achievement[]>([])
   const [current, setCurrent] = useState<Achievement | null>(null)
   const initialized = useRef(false)
 
   useEffect(() => {
     if (!userId) return
-    const key = getSeenKey(userId)
-    const seen: string[] = JSON.parse(localStorage.getItem(key) || '[]')
-    const seenSet = new Set(seen)
+    const user = users.find(u => u.id === userId)
+    const seenSet = new Set(user?.seenAchievements ?? [])
 
     const newOnes = achievements.filter(
       a => a.check(tasks, streak, draws) && !seenSet.has(a.id)
     )
 
     if (newOnes.length > 0) {
-      const updated = [...seen, ...newOnes.map(a => a.id)]
-      localStorage.setItem(key, JSON.stringify(updated))
+      newOnes.forEach(a => markAchievementSeen(userId, a.id))
       if (initialized.current) {
         setQueue(prev => [...prev, ...newOnes])
       }

@@ -50,7 +50,7 @@ function BadgesSection({ tasks, streak, draws }: { tasks: number; streak: number
 }
 
 export default function SettingsPage() {
-  const { currentUser, users, updatePin, updateName, updateAvatar } = useAuthStore()
+  const { currentUser, users, updatePin, updateName, updateAvatar, addTickets, resetSeenAchievements } = useAuthStore()
   const { tasks, deleteTask } = useTaskStore()
   const { records } = useLotteryStore()
   const { prizes, addPrize, deletePrize } = usePrizeStore()
@@ -326,6 +326,16 @@ export default function SettingsPage() {
                       }} className="btn-primary w-full py-1.5 text-sm flex items-center justify-center gap-1">
                         <Save size={13} /> 保存
                       </button>
+                      <div className="flex gap-2 pt-1">
+                        <button onClick={() => { addTickets(u.id, 10); showToast(`已给 ${u.name} 补发 10 张抽奖券 🎟️`) }}
+                          className="flex-1 btn-secondary py-1.5 text-xs">
+                          🎟️ 补发 10 张券
+                        </button>
+                        <button onClick={() => { resetSeenAchievements(u.id); showToast(`已重置 ${u.name} 的成就记录 🔄`) }}
+                          className="flex-1 py-1.5 text-xs rounded-xl border border-amber-300 text-amber-600 hover:bg-amber-50 transition-colors">
+                          🔄 重置成就记录
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
