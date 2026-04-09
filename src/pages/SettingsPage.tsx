@@ -305,12 +305,17 @@ export default function SettingsPage() {
             <div className="space-y-3">
               {users.map(u => (
                 <div key={u.id} className="border border-rose-100 rounded-xl p-3">
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center justify-between mb-1">
                     <span className="font-medium text-gray-700">{u.avatar} {u.name}{u.isAdmin && <span className="ml-1 text-xs text-purple-500">(管理员)</span>}</span>
                     <button onClick={() => { setAdminEditId(adminEditId === u.id ? null : u.id); setAdminName(u.name); setAdminPin('') }}
                       className="text-xs text-rose-400 hover:text-rose-600">
                       {adminEditId === u.id ? '收起' : '编辑'}
                     </button>
+                  </div>
+                  <div className="flex gap-3 text-xs text-gray-400 mb-2">
+                    <span>✅ 完成任务 {u.totalTasksCompleted} 次</span>
+                    <span>🏅 徽章 {achievements.filter(a => a.check(u.totalTasksCompleted, u.streak, records.filter(r => r.userId === u.id).length)).length} / {achievements.length}</span>
+                    <span>🎟️ {u.tickets} 张券</span>
                   </div>
                   {adminEditId === u.id && (
                     <div className="space-y-2">
