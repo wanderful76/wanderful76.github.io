@@ -1,5 +1,4 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
 import type { Prize, PrizeCategory } from '../types'
 
 const defaultPrizes: Prize[] = [
@@ -68,8 +67,7 @@ interface PrizeStore {
 }
 
 export const usePrizeStore = create<PrizeStore>()(
-  persist(
-    (set, get) => ({
+  (set, get) => ({
       prizes: defaultPrizes,
 
       addPrize: (name, category, emoji) => {
@@ -82,7 +80,5 @@ export const usePrizeStore = create<PrizeStore>()(
       deletePrize: (id) => {
         set(state => ({ prizes: state.prizes.filter(p => p.id !== id) }))
       },
-    }),
-    { name: 'forus-prizes', version: 1 }
-  )
+  })
 )

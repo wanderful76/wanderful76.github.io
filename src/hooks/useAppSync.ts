@@ -14,7 +14,7 @@ function schedPush(key: string, getValue: () => unknown) {
   clearTimeout(pushTimers[key])
   pushTimers[key] = setTimeout(() => {
     dbSet(key, getValue()).catch(e => console.warn('[sync] push failed:', e))
-  }, 2000)
+  }, 500)
 }
 
 function applyRemote(key: string, value: unknown) {
@@ -67,6 +67,7 @@ async function fullSync() {
     if (tasks) applyRemote('forus-tasks', tasks)
     if (lottery) applyRemote('forus-lottery', lottery)
     if (prizes) applyRemote('forus-prizes', prizes)
+    else dbSet('forus-prizes', { prizes: usePrizeStore.getState().prizes }).catch(console.warn)
   } catch (e) {
     console.warn('[sync] initial sync failed:', e)
   }

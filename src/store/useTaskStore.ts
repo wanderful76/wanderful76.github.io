@@ -1,5 +1,4 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
 import type { Task, TaskStatus, TaskCategory, TaskRepeat } from '../types'
 
 interface TaskStore {
@@ -16,43 +15,8 @@ interface TaskStore {
 }
 
 export const useTaskStore = create<TaskStore>()(
-  persist(
-    (set, get) => ({
-      tasks: [
-        {
-          id: 'demo-1',
-          title: '背 20 个单词',
-          description: '每天坚持背单词，积累词汇量',
-          points: 3,
-          repeat: 'daily' as TaskRepeat,
-          status: 'pending' as TaskStatus,
-          category: 'study' as TaskCategory,
-          createdBy: 'admin',
-          createdAt: new Date().toISOString(),
-        },
-        {
-          id: 'demo-2',
-          title: '运动 30 分钟',
-          description: '跑步、跳绳或其他有氧运动',
-          points: 4,
-          repeat: 'daily' as TaskRepeat,
-          status: 'pending' as TaskStatus,
-          category: 'exercise' as TaskCategory,
-          createdBy: 'admin',
-          createdAt: new Date().toISOString(),
-        },
-        {
-          id: 'demo-3',
-          title: '整理学习笔记',
-          description: '复习并整理今天学习的内容',
-          points: 2,
-          repeat: 'daily' as TaskRepeat,
-          status: 'pending' as TaskStatus,
-          category: 'study' as TaskCategory,
-          createdBy: 'admin',
-          createdAt: new Date().toISOString(),
-        },
-      ],
+  (set, get) => ({
+      tasks: [],
 
       addTask: (taskData) => {
         const task: Task = {
@@ -136,7 +100,5 @@ export const useTaskStore = create<TaskStore>()(
           return true
         })
       },
-    }),
-    { name: 'forus-tasks', version: 1 }
-  )
+  })
 )

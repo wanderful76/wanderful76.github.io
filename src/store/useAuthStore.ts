@@ -177,6 +177,9 @@ export const useAuthStore = create<AuthStore>()(
         }))
       },
     }),
-    { name: 'forus-auth', version: 2 }
+    {
+      name: 'forus-session',
+      partialize: (state) => ({ currentUser: state.currentUser }),
+    }
   )
 )
