@@ -15,11 +15,13 @@ import type { PrizeCategory } from '../types'
 
 const avatarOptions = ['👑','🌸','🐼','🦊','🐰','🌙','⭐','🦋','🌺','🎀','🍀','🌈']
 
-function BadgeThumb({ a, unlocked }: { a: Achievement; unlocked: boolean }) {
+function BadgeThumb({ a, unlocked, onClick }: { a: Achievement; unlocked: boolean; onClick: () => void }) {
   const [imgErr, setImgErr] = useState(false)
   return (
-    <div title={`${a.title}：${a.desc}`}
-      className={`w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden transition-all ${
+    <button
+      onClick={onClick}
+      title={`${a.title}：${a.desc}`}
+      className={`w-full aspect-square rounded-xl flex items-center justify-center overflow-hidden transition-all active:scale-95 hover:scale-105 ${
         unlocked
           ? 'bg-gradient-to-br from-amber-50 to-yellow-100 border-2 border-amber-300 shadow-sm'
           : 'bg-gray-100 border-2 border-gray-200 opacity-30 grayscale'
@@ -30,21 +32,90 @@ function BadgeThumb({ a, unlocked }: { a: Achievement; unlocked: boolean }) {
       ) : (
         <span className="text-2xl">{a.emoji}</span>
       )}
-    </div>
+    </button>
+  )
+}
+
+function BadgeDetailModal({ a, unlocked, onClose }: { a: Achievement; unlocked: boolean; onClose: () => void }) {
+  const [imgErr, setImgErr] = useState(false)
+  return (
+    <AnimatePresence>
+      <motion.div
+        className="fixed inset-0 z-50 flex items-center justify-center px-6"
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+        onClick={onClose}>
+        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+        <motion.div
+          className="relative glass-card p-6 w-full max-w-xs flex flex-col items-center gap-4 text-center"
+          initial={{ scale: 0.8, opacity: 0, y: 20 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.8, opacity: 0, y: 20 }}
+          transition={{ type: 'spring', damping: 18, stiffness: 300 }}
+          onClick={e => e.stopPropagation()}>
+          {/* Badge image */}
+          <div className={`w-24 h-24 rounded-2xl flex items-center justify-center overflow-hidden ${
+            unlocked
+              ? 'bg-gradient-to-br from-amber-50 to-yellow-100 border-2 border-amber-300 shadow-lg'
+              : 'bg-gray-100 border-2 border-gray-200 grayscale'
+          }`}>
+            {!imgErr ? (
+              <img src={`${BADGE_IMAGES_PATH}${a.imageFile}`} alt={a.title}
+                className="w-full h-full object-cover" onError={() => setImgErr(true)} />
+            ) : (
+              <span className="text-5xl">{a.emoji}</span>
+            )}
+          </div>
+
+          {/* Status badge */}
+          <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
+            unlocked ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'
+          }`}>
+            {unlocked ? '✅ 已达成' : '🔒 未达成'}
+          </div>
+
+          {/* Title & condition */}
+          <div>
+            <h3 className={`text-lg font-bold mb-1 ${unlocked ? 'text-gray-800' : 'text-gray-400'}`}>{a.title}</h3>
+            <p className="text-sm text-gray-500">{a.desc}</p>
+          </div>
+
+          {/* Quote */}
+          <div className={`w-full rounded-xl px-4 py-3 text-sm leading-relaxed italic ${
+            unlocked ? 'bg-amber-50 text-amber-700' : 'bg-gray-50 text-gray-400'
+          }`}>
+            「{a.quote}」
+          </div>
+
+          <button onClick={onClose}
+            className="text-xs text-gray-400 hover:text-gray-600 transition-colors mt-1">
+            关闭
+          </button>
+        </motion.div>
+      </motion.div>
+    </AnimatePresence>
   )
 }
 
 function BadgesSection({ tasks, streak, draws }: { tasks: number; streak: number; draws: number }) {
-  const unlocked = achievements.filter(a => a.check(tasks, streak, draws))
+  const [selected, setSelected] = useState<Achievement | null>(null)
+  const unlockedCount = achievements.filter(a => a.check(tasks, streak, draws)).length
   return (
     <div className="glass-card p-5">
       <h2 className="font-semibold text-gray-700 mb-1">我的成就徽章</h2>
-      <p className="text-xs text-gray-400 mb-3">已获得 {unlocked.length} / {achievements.length} 枚</p>
-      <div className="flex flex-wrap gap-2">
+      <p className="text-xs text-gray-400 mb-3">已获得 {unlockedCount} / {achievements.length} 枚 · 点击可查看详情</p>
+      <div className="grid grid-cols-5 gap-2">
         {achievements.map(a => (
-          <BadgeThumb key={a.id} a={a} unlocked={a.check(tasks, streak, draws)} />
+          <BadgeThumb key={a.id} a={a} unlocked={a.check(tasks, streak, draws)}
+            onClick={() => setSelected(a)} />
         ))}
       </div>
+      {selected && (
+        <BadgeDetailModal
+          a={selected}
+          unlocked={selected.check(tasks, streak, draws)}
+          onClose={() => setSelected(null)}
+        />
+      )}
     </div>
   )
 }
