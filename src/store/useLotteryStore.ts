@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 import type { LotteryRecord, PrizeCategory } from '../types'
 import { usePrizeStore } from './usePrizeStore'
 
@@ -13,6 +14,7 @@ interface LotteryStore {
 }
 
 export const useLotteryStore = create<LotteryStore>()(
+  persist(
   (set, get) => ({
       records: [],
 
@@ -65,5 +67,7 @@ export const useLotteryStore = create<LotteryStore>()(
           : get().records
         return records.length
       },
-  })
+  }),
+  { name: 'forus-lottery-local' }
+  )
 )

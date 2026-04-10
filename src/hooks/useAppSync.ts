@@ -9,12 +9,23 @@ import type { User } from '../types'
 let syncing = false
 const pushTimers: Record<string, ReturnType<typeof setTimeout>> = {}
 
-function schedPush(key: string, getValue: () => unknown) {
+function schedPush(key: string) {
   if (syncing) return
   clearTimeout(pushTimers[key])
   pushTimers[key] = setTimeout(() => {
-    dbSet(key, getValue()).catch(e => console.warn('[sync] push failed:', e))
+    let payload: unknown
+    if (key === 'forus-auth')    payload = { users: useAuthStore.getState().users }
+    if (key === 'forus-tasks')   payload = { tasks: useTaskStore.getState().tasks }
+    if (key === 'forus-lottery') payload = { records: useLotteryStore.getState().records }
+    if (key === 'forus-prizes')  payload = { prizes: usePrizeStore.getState().prizes }
+    if (payload) dbSet(key, payload).catch(e => console.warn('[sync] push failed:', e))
   }, 500)
+}
+
+function mergeById<T extends { id: string | number }>(remote: T[], local: T[]): T[] {
+  const remoteIds = new Set(remote.map(item => item.id))
+  const localOnly = local.filter(item => !remoteIds.has(item.id))
+  return [...remote, ...localOnly]
 }
 
 function applyRemote(key: string, value: unknown) {
@@ -33,14 +44,18 @@ function applyRemote(key: string, value: unknown) {
       }
     }
     if (key === 'forus-tasks') {
-      const v = value as { tasks: unknown[] }
+      const v = value as { tasks: import('../types').Task[] }
       if (!v.tasks) return
-      useTaskStore.setState({ tasks: v.tasks as never })
+      const local = useTaskStore.getState().tasks
+      const merged = mergeById(v.tasks, local)
+      useTaskStore.setState({ tasks: merged })
     }
     if (key === 'forus-lottery') {
-      const v = value as { records: unknown[] }
+      const v = value as { records: import('../types').LotteryRecord[] }
       if (!v.records) return
-      useLotteryStore.setState({ records: v.records as never })
+      const local = useLotteryStore.getState().records
+      const merged = mergeById(v.records, local)
+      useLotteryStore.setState({ records: merged })
     }
     if (key === 'forus-prizes') {
       const v = value as { prizes: unknown[] }
@@ -82,18 +97,10 @@ export function useAppSync() {
   useEffect(() => {
     fullSync()
 
-    const unsubAuth = useAuthStore.subscribe(state => {
-      schedPush('forus-auth', () => ({ users: state.users }))
-    })
-    const unsubTasks = useTaskStore.subscribe(state => {
-      schedPush('forus-tasks', () => ({ tasks: state.tasks }))
-    })
-    const unsubLottery = useLotteryStore.subscribe(state => {
-      schedPush('forus-lottery', () => ({ records: state.records }))
-    })
-    const unsubPrizes = usePrizeStore.subscribe(state => {
-      schedPush('forus-prizes', () => ({ prizes: state.prizes }))
-    })
+    const unsubAuth    = useAuthStore.subscribe(()    => schedPush('forus-auth'))
+    const unsubTasks   = useTaskStore.subscribe(()   => schedPush('forus-tasks'))
+    const unsubLottery = useLotteryStore.subscribe(() => schedPush('forus-lottery'))
+    const unsubPrizes  = usePrizeStore.subscribe(()  => schedPush('forus-prizes'))
 
     const channel = supabase
       .channel('forus-sync')

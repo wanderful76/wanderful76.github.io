@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 import type { Task, TaskStatus, TaskCategory, TaskRepeat } from '../types'
 
 interface TaskStore {
@@ -15,6 +16,7 @@ interface TaskStore {
 }
 
 export const useTaskStore = create<TaskStore>()(
+  persist(
   (set, get) => ({
       tasks: [],
 
@@ -100,5 +102,7 @@ export const useTaskStore = create<TaskStore>()(
           return true
         })
       },
-  })
+  }),
+  { name: 'forus-tasks-local' }
+  )
 )
