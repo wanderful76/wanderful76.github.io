@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, ListTodo, Gift, BarChart2, Settings, LogOut } from 'lucide-react'
+import { LayoutDashboard, ListTodo, Gift, BarChart2, Settings, LogOut, BookHeart } from 'lucide-react'
 import { useAuthStore } from '../store/useAuthStore'
 import { useLotteryStore } from '../store/useLotteryStore'
 import { loveQuotes } from '../data/quotes'
@@ -30,6 +30,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     { to: '/dashboard', icon: LayoutDashboard, label: '首页',  badge: partnerNewDraws > 0 },
     { to: '/tasks',     icon: ListTodo,        label: '任务',  badge: false },
     { to: '/lottery',   icon: Gift,            label: '抽奖',  badge: false },
+    { to: '/memos',     icon: BookHeart,       label: '记录',  badge: false },
     { to: '/stats',     icon: BarChart2,       label: '统计',  badge: false },
     { to: '/settings',  icon: Settings,        label: '设置',  badge: false },
   ]

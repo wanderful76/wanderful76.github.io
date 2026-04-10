@@ -3,6 +3,8 @@ import { useAuthStore } from '../store/useAuthStore'
 import { useTaskStore } from '../store/useTaskStore'
 import { useLotteryStore } from '../store/useLotteryStore'
 import { usePrizeStore } from '../store/usePrizeStore'
+import { useWishStore } from '../store/useWishStore'
+import { useReminderStore } from '../store/useReminderStore'
 import { supabase, dbGet, dbSet } from '../lib/supabase'
 import type { User } from '../types'
 
@@ -14,10 +16,12 @@ function schedPush(key: string) {
   clearTimeout(pushTimers[key])
   pushTimers[key] = setTimeout(() => {
     let payload: unknown
-    if (key === 'forus-auth')    payload = { users: useAuthStore.getState().users }
-    if (key === 'forus-tasks')   payload = { tasks: useTaskStore.getState().tasks }
-    if (key === 'forus-lottery') payload = { records: useLotteryStore.getState().records }
-    if (key === 'forus-prizes')  payload = { prizes: usePrizeStore.getState().prizes }
+    if (key === 'forus-auth')      payload = { users: useAuthStore.getState().users }
+    if (key === 'forus-tasks')     payload = { tasks: useTaskStore.getState().tasks }
+    if (key === 'forus-lottery')   payload = { records: useLotteryStore.getState().records }
+    if (key === 'forus-prizes')    payload = { prizes: usePrizeStore.getState().prizes }
+    if (key === 'forus-wishes')    payload = { wishes: useWishStore.getState().wishes }
+    if (key === 'forus-reminders') payload = { reminders: useReminderStore.getState().reminders }
     if (payload) dbSet(key, payload).catch(e => console.warn('[sync] push failed:', e))
   }, 500)
 }
@@ -62,6 +66,18 @@ function applyRemote(key: string, value: unknown) {
       if (!v.prizes) return
       usePrizeStore.setState({ prizes: v.prizes as never })
     }
+    if (key === 'forus-wishes') {
+      const v = value as { wishes: import('../types').WishItem[] }
+      if (!v.wishes) return
+      const local = useWishStore.getState().wishes
+      useWishStore.setState({ wishes: mergeById(v.wishes, local) })
+    }
+    if (key === 'forus-reminders') {
+      const v = value as { reminders: import('../types').Reminder[] }
+      if (!v.reminders) return
+      const local = useReminderStore.getState().reminders
+      useReminderStore.setState({ reminders: mergeById(v.reminders, local) })
+    }
   } finally {
     setTimeout(() => { syncing = false }, 200)
   }
@@ -69,11 +85,13 @@ function applyRemote(key: string, value: unknown) {
 
 async function fullSync() {
   try {
-    const [auth, tasks, lottery, prizes] = await Promise.all([
+    const [auth, tasks, lottery, prizes, wishes, reminders] = await Promise.all([
       dbGet('forus-auth'),
       dbGet('forus-tasks'),
       dbGet('forus-lottery'),
       dbGet('forus-prizes'),
+      dbGet('forus-wishes'),
+      dbGet('forus-reminders'),
     ])
     if (auth) applyRemote('forus-auth', auth)
     else {
@@ -88,6 +106,8 @@ async function fullSync() {
     if (lottery) applyRemote('forus-lottery', lottery)
     if (prizes) applyRemote('forus-prizes', prizes)
     else dbSet('forus-prizes', { prizes: usePrizeStore.getState().prizes }).catch(console.warn)
+    if (wishes) applyRemote('forus-wishes', wishes)
+    if (reminders) applyRemote('forus-reminders', reminders)
   } catch (e) {
     console.warn('[sync] initial sync failed:', e)
   }
@@ -97,10 +117,12 @@ export function useAppSync() {
   useEffect(() => {
     fullSync()
 
-    const unsubAuth    = useAuthStore.subscribe(()    => schedPush('forus-auth'))
-    const unsubTasks   = useTaskStore.subscribe(()   => schedPush('forus-tasks'))
-    const unsubLottery = useLotteryStore.subscribe(() => schedPush('forus-lottery'))
-    const unsubPrizes  = usePrizeStore.subscribe(()  => schedPush('forus-prizes'))
+    const unsubAuth      = useAuthStore.subscribe(()     => schedPush('forus-auth'))
+    const unsubTasks     = useTaskStore.subscribe(()     => schedPush('forus-tasks'))
+    const unsubLottery   = useLotteryStore.subscribe(()  => schedPush('forus-lottery'))
+    const unsubPrizes    = usePrizeStore.subscribe(()    => schedPush('forus-prizes'))
+    const unsubWishes    = useWishStore.subscribe(()     => schedPush('forus-wishes'))
+    const unsubReminders = useReminderStore.subscribe(() => schedPush('forus-reminders'))
 
     const channel = supabase
       .channel('forus-sync')
@@ -119,6 +141,8 @@ export function useAppSync() {
       unsubTasks()
       unsubLottery()
       unsubPrizes()
+      unsubWishes()
+      unsubReminders()
       supabase.removeChannel(channel)
     }
   }, [])

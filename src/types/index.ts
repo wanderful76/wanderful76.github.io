@@ -65,6 +65,31 @@ export interface Achievement {
   unlockedAt?: string
 }
 
+export type WishCategory = 'travel' | 'food' | 'gift' | 'study' | 'date' | 'other'
+
+export interface WishItem {
+  id: string
+  title: string
+  note?: string
+  category: WishCategory
+  addedBy: string
+  addedAt: string
+  fulfilled: boolean
+  fulfilledAt?: string
+  fulfilledBy?: string
+}
+
+export interface Reminder {
+  id: string
+  title: string
+  date: string
+  note?: string
+  emoji: string
+  createdBy: string
+  createdAt: string
+  repeat: 'once' | 'yearly'
+}
+
 export interface UserStats {
   totalTasksCompleted: number
   totalTicketsEarned: number

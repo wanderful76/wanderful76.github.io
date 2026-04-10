@@ -10,6 +10,7 @@ import TasksPage from './pages/TasksPage'
 import LotteryPage from './pages/LotteryPage'
 import StatsPage from './pages/StatsPage'
 import SettingsPage from './pages/SettingsPage'
+import MemosPage from './pages/MemosPage'
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { currentUser } = useAuthStore()
@@ -66,6 +67,11 @@ export default function App() {
         <Route path="/settings" element={
           <RequireAuth>
             <Layout><SettingsPage /></Layout>
+          </RequireAuth>
+        } />
+        <Route path="/memos" element={
+          <RequireAuth>
+            <Layout><MemosPage /></Layout>
           </RequireAuth>
         } />
 
