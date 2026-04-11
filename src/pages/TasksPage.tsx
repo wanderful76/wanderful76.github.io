@@ -77,11 +77,17 @@ export default function TasksPage() {
     showToast('任务已添加！', '✅')
   }
 
-  const filtered = tasks.filter(t =>
-    filter === 'all' ? true :
-    filter === 'pending' ? t.status !== 'completed' :
-    t.status === 'completed'
-  )
+  const applyFilter = (list: typeof tasks) =>
+    list.filter(t =>
+      filter === 'all' ? true :
+      filter === 'pending' ? t.status !== 'completed' :
+      t.status === 'completed'
+    )
+
+  const tasksByUser = users.map(u => ({
+    user: u,
+    tasks: applyFilter(tasks.filter(t => t.createdBy === u.id)),
+  }))
 
   return (
     <div className="space-y-5">
@@ -113,77 +119,89 @@ export default function TasksPage() {
         ))}
       </div>
 
-      {/* Task list */}
-      <div className="space-y-3">
-        <AnimatePresence>
-          {filtered.length === 0 && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              className="glass-card p-8 text-center text-gray-400">
-              <p className="text-3xl mb-2">🌸</p>
-              <p className="text-sm">暂无任务</p>
-            </motion.div>
-          )}
-          {filtered.map(task => (
-            <motion.div
-              key={task.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className={`glass-card p-4 ${task.status === 'completed' ? 'opacity-60' : ''}`}
-            >
-              <div className="flex items-start gap-3">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className={`badge ${categoryConfig[task.category].color}`}>
-                      {categoryConfig[task.category].emoji} {categoryConfig[task.category].label}
-                    </span>
-                    <span className="badge bg-gray-100 text-gray-500">{repeatConfig[task.repeat]}</span>
-                    <span className="badge bg-amber-50 text-amber-500">🎟 +1</span>
-                  </div>
-                  <p className={`font-medium text-gray-800 mt-1.5 ${task.status === 'completed' ? 'line-through' : ''}`}>
-                    {task.title}
-                  </p>
-                  {task.description && (
-                    <p className="text-sm text-gray-500 mt-0.5 truncate">{task.description}</p>
-                  )}
-                  {task.deadline && (
-                    <p className="text-xs text-rose-400 mt-1">⏰ {task.deadline}</p>
-                  )}
-                  {task.status === 'completed' && task.completedAt && (
-                    <p className="text-xs text-green-500 mt-1">
-                      ✅ {users.find(u => u.id === task.completedBy)?.name ?? '未知'} 完成于 {new Date(task.completedAt).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                    </p>
-                  )}
-                </div>
+      {/* Task list grouped by user */}
+      <div className="space-y-5">
+        {tasksByUser.map(({ user, tasks: userTasks }) => (
+          <div key={user.id}>
+            {/* Section header */}
+            <div className="flex items-center gap-2 mb-2 px-1">
+              <span className="text-xl">{user.avatar}</span>
+              <span className="font-semibold text-gray-700 text-sm">{user.name} 的任务</span>
+              <span className="text-xs text-gray-400 ml-auto">{userTasks.length} 项</span>
+            </div>
 
-                <div className="flex items-center gap-1.5 flex-shrink-0">
-                  {task.status === 'pending' && (
-                    <>
-                      <button onClick={() => setInProgress(task.id)}
-                        className="p-1.5 rounded-lg text-amber-400 hover:bg-amber-50 transition-colors" title="开始">
-                        <PlayCircle size={18} />
-                      </button>
-                      <button onClick={() => handleComplete(task.id)}
-                        className="p-1.5 rounded-lg text-green-400 hover:bg-green-50 transition-colors" title="完成">
-                        <CheckCircle2 size={18} />
-                      </button>
-                    </>
-                  )}
-                  {task.status === 'in_progress' && (
-                    <button onClick={() => handleComplete(task.id)}
-                      className="p-1.5 rounded-lg text-green-400 hover:bg-green-50 transition-colors" title="完成">
-                      <CheckCircle2 size={18} />
-                    </button>
-                  )}
-                  <button onClick={() => deleteTask(task.id)}
-                    className="p-1.5 rounded-lg text-red-300 hover:bg-red-50 hover:text-red-400 transition-colors" title="删除">
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </AnimatePresence>
+            <div className="space-y-3">
+              <AnimatePresence>
+                {userTasks.length === 0 && (
+                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    className="glass-card p-5 text-center text-gray-400">
+                    <p className="text-sm">暂无任务 🌸</p>
+                  </motion.div>
+                )}
+                {userTasks.map(task => (
+                  <motion.div
+                    key={task.id}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    className={`glass-card p-4 ${task.status === 'completed' ? 'opacity-60' : ''}`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`badge ${categoryConfig[task.category].color}`}>
+                            {categoryConfig[task.category].emoji} {categoryConfig[task.category].label}
+                          </span>
+                          <span className="badge bg-gray-100 text-gray-500">{repeatConfig[task.repeat]}</span>
+                          <span className="badge bg-amber-50 text-amber-500">🎟 +1</span>
+                        </div>
+                        <p className={`font-medium text-gray-800 mt-1.5 ${task.status === 'completed' ? 'line-through' : ''}`}>
+                          {task.title}
+                        </p>
+                        {task.description && (
+                          <p className="text-sm text-gray-500 mt-0.5 truncate">{task.description}</p>
+                        )}
+                        {task.deadline && (
+                          <p className="text-xs text-rose-400 mt-1">⏰ {task.deadline}</p>
+                        )}
+                        {task.status === 'completed' && task.completedAt && (
+                          <p className="text-xs text-green-500 mt-1">
+                            ✅ {users.find(u => u.id === task.completedBy)?.name ?? '未知'} 完成于 {new Date(task.completedAt).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        {task.status === 'pending' && (
+                          <>
+                            <button onClick={() => setInProgress(task.id)}
+                              className="p-1.5 rounded-lg text-amber-400 hover:bg-amber-50 transition-colors" title="开始">
+                              <PlayCircle size={18} />
+                            </button>
+                            <button onClick={() => handleComplete(task.id)}
+                              className="p-1.5 rounded-lg text-green-400 hover:bg-green-50 transition-colors" title="完成">
+                              <CheckCircle2 size={18} />
+                            </button>
+                          </>
+                        )}
+                        {task.status === 'in_progress' && (
+                          <button onClick={() => handleComplete(task.id)}
+                            className="p-1.5 rounded-lg text-green-400 hover:bg-green-50 transition-colors" title="完成">
+                            <CheckCircle2 size={18} />
+                          </button>
+                        )}
+                        <button onClick={() => deleteTask(task.id)}
+                          className="p-1.5 rounded-lg text-red-300 hover:bg-red-50 hover:text-red-400 transition-colors" title="删除">
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Add task modal */}
