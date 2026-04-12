@@ -5,12 +5,14 @@ import { useLotteryStore } from '../store/useLotteryStore'
 import { loveQuotes } from '../data/quotes'
 import LoveQuoteSpot from './LoveQuoteSpot'
 
-const cornerQuotes = [
-  loveQuotes[0],
-  loveQuotes[4],
-  loveQuotes[14],
-  loveQuotes[28],
-]
+function getDailyCornerQuotes() {
+  const day  = Math.floor(Date.now() / 86400000)
+  const n    = loveQuotes.length
+  const step = Math.floor(n / 4)
+  return [0, 1, 2, 3].map(i => loveQuotes[(day + i * step) % n])
+}
+
+const cornerQuotes = getDailyCornerQuotes()
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const { currentUser, logout, users } = useAuthStore()
