@@ -21,13 +21,14 @@ export default function AchievementPopup({ achievement, onClose }: Props) {
   return (
     <AnimatePresence>
       {achievement && (
+        <div className="fixed top-4 inset-x-0 z-50 flex justify-center px-4 pointer-events-none">
         <motion.div
           key={achievement.id}
           initial={{ opacity: 0, y: -60, scale: 0.92 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -40, scale: 0.94 }}
           transition={{ type: 'spring', stiffness: 280, damping: 22 }}
-          className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-80 max-w-[92vw]"
+          className="w-full max-w-sm pointer-events-auto"
         >
           <div className="glass-card overflow-hidden shadow-2xl border border-rose-200/60">
             {/* Top accent bar */}
@@ -74,6 +75,7 @@ export default function AchievementPopup({ achievement, onClose }: Props) {
             </button>
           </div>
         </motion.div>
+        </div>
       )}
     </AnimatePresence>
   )
