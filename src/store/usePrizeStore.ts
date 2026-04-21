@@ -63,6 +63,7 @@ const defaultPrizes: Prize[] = [
 interface PrizeStore {
   prizes: Prize[]
   addPrize: (name: string, category: PrizeCategory, emoji: string) => void
+  updatePrize: (id: number, data: Partial<Omit<Prize, 'id'>>) => void
   deletePrize: (id: number) => void
 }
 
@@ -74,6 +75,12 @@ export const usePrizeStore = create<PrizeStore>()(
         const maxId = Math.max(...get().prizes.map(p => p.id), 100)
         set(state => ({
           prizes: [...state.prizes, { id: maxId + 1, name, category, emoji }],
+        }))
+      },
+
+      updatePrize: (id, data) => {
+        set(state => ({
+          prizes: state.prizes.map(p => p.id === id ? { ...p, ...data } : p),
         }))
       },
 

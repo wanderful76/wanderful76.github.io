@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Save, Eye, EyeOff, Trash2, Plus, ShieldCheck } from 'lucide-react'
+import { Save, Eye, EyeOff, Trash2, Plus, ShieldCheck, Pencil, Check, X } from 'lucide-react'
 import { useAuthStore } from '../store/useAuthStore'
 import { useTaskStore } from '../store/useTaskStore'
 import { useLotteryStore } from '../store/useLotteryStore'
@@ -124,7 +124,7 @@ export default function SettingsPage() {
   const { currentUser, users, updatePin, updateName, updateAvatar, addTickets, setTickets, resetSeenAchievements, setTotalTasksCompleted } = useAuthStore()
   const { tasks, deleteTask } = useTaskStore()
   const { records } = useLotteryStore()
-  const { prizes, addPrize, deletePrize } = usePrizeStore()
+  const { prizes, addPrize, updatePrize, deletePrize } = usePrizeStore()
 
   const isAdmin = currentUser?.id === 'user1'
 
@@ -144,6 +144,10 @@ export default function SettingsPage() {
   const [newPrizeName, setNewPrizeName]   = useState('')
   const [newPrizeCat, setNewPrizeCat]     = useState<PrizeCategory>('snack')
   const [newPrizeEmoji, setNewPrizeEmoji] = useState('')
+  const [editPrizeId, setEditPrizeId]     = useState<number | null>(null)
+  const [editPrizeName, setEditPrizeName] = useState('')
+  const [editPrizeCat, setEditPrizeCat]   = useState<PrizeCategory>('snack')
+  const [editPrizeEmoji, setEditPrizeEmoji] = useState('')
   const [showResetConfirm, setShowResetConfirm] = useState(false)
 
   const showToast = (msg: string) => {
@@ -449,18 +453,54 @@ export default function SettingsPage() {
                 <Plus size={16} />
               </button>
             </div>
-            <div className="space-y-1 max-h-64 overflow-y-auto scrollbar-hide">
+            <div className="space-y-1 max-h-72 overflow-y-auto scrollbar-hide">
               {[...prizes].sort((a, b) => categories.indexOf(a.category) - categories.indexOf(b.category)).map((p: { id: number; name: string; category: PrizeCategory; emoji: string }) => (
-                <div key={p.id} className="flex items-center gap-2 p-2 rounded-lg hover:bg-rose-50/50">
-                  <span>{p.emoji}</span>
-                  <span className="flex-1 text-sm text-gray-700 truncate">{p.name}</span>
-                  <span className={`badge text-xs ${prizeCategoryConfig[p.category].bg} ${prizeCategoryConfig[p.category].color}`}>
-                    {prizeCategoryConfig[p.category].label}
-                  </span>
-                  <button onClick={() => { deletePrize(p.id); showToast('已删除') }}
-                    className="p-1 text-red-300 hover:text-red-500 transition-colors">
-                    <Trash2 size={13} />
-                  </button>
+                <div key={p.id} className="rounded-lg hover:bg-rose-50/50 transition-colors">
+                  {editPrizeId === p.id ? (
+                    <div className="p-2 space-y-2 bg-rose-50/80 rounded-lg">
+                      <div className="flex gap-2">
+                        <input type="text" value={editPrizeEmoji} onChange={e => setEditPrizeEmoji(e.target.value)}
+                          className="input-field w-12 text-center text-lg py-1" maxLength={2} />
+                        <input type="text" value={editPrizeName} onChange={e => setEditPrizeName(e.target.value)}
+                          className="input-field flex-1 py-1 text-sm" />
+                      </div>
+                      <div className="flex gap-2 items-center">
+                        <select value={editPrizeCat} onChange={e => setEditPrizeCat(e.target.value as PrizeCategory)}
+                          className="input-field flex-1 py-1 text-sm">
+                          {categories.map(c => <option key={c} value={c}>{prizeCategoryConfig[c].label}</option>)}
+                        </select>
+                        <button onClick={() => {
+                          if (editPrizeName.trim() && editPrizeEmoji.trim()) {
+                            updatePrize(p.id, { name: editPrizeName.trim(), emoji: editPrizeEmoji.trim(), category: editPrizeCat })
+                            showToast('已保存 ✅')
+                          }
+                          setEditPrizeId(null)
+                        }} className="p-1.5 rounded-lg bg-green-500 text-white hover:bg-green-600 transition-colors">
+                          <Check size={14} />
+                        </button>
+                        <button onClick={() => setEditPrizeId(null)}
+                          className="p-1.5 rounded-lg bg-gray-300 text-gray-600 hover:bg-gray-400 transition-colors">
+                          <X size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 p-2">
+                      <span>{p.emoji}</span>
+                      <span className="flex-1 text-sm text-gray-700 truncate">{p.name}</span>
+                      <span className={`badge text-xs ${prizeCategoryConfig[p.category].bg} ${prizeCategoryConfig[p.category].color}`}>
+                        {prizeCategoryConfig[p.category].label}
+                      </span>
+                      <button onClick={() => { setEditPrizeId(p.id); setEditPrizeName(p.name); setEditPrizeEmoji(p.emoji); setEditPrizeCat(p.category) }}
+                        className="p-1 text-blue-300 hover:text-blue-500 transition-colors">
+                        <Pencil size={13} />
+                      </button>
+                      <button onClick={() => { deletePrize(p.id); showToast('已删除') }}
+                        className="p-1 text-red-300 hover:text-red-500 transition-colors">
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
