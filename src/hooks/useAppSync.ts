@@ -27,9 +27,9 @@ function schedPush(key: string) {
 }
 
 function mergeById<T extends { id: string | number }>(remote: T[], local: T[]): T[] {
-  const remoteIds = new Set(remote.map(item => item.id))
-  const localOnly = local.filter(item => !remoteIds.has(item.id))
-  return [...remote, ...localOnly]
+  const localIds = new Set(local.map(item => item.id))
+  const remoteOnly = remote.filter(item => !localIds.has(item.id))
+  return [...local, ...remoteOnly]
 }
 
 function applyRemote(key: string, value: unknown) {
@@ -39,11 +39,29 @@ function applyRemote(key: string, value: unknown) {
     if (key === 'forus-auth') {
       const v = value as { users: User[] }
       if (!v.users) return
-      const users = v.users.map(u => u.id === 'user1' ? { ...u, isAdmin: true } : u)
+      const localUsers = useAuthStore.getState().users
+      const localMap = new Map(localUsers.map(u => [u.id, u]))
+      const merged = v.users.map(ru => {
+        const local = localMap.get(ru.id)
+        if (local) {
+          return {
+            ...ru,
+            pin: local.pin,
+            name: local.name,
+            avatar: local.avatar,
+            isAdmin: ru.id === 'user1',
+            points: Math.max(local.points, ru.points ?? 0),
+            tickets: Math.max(local.tickets, ru.tickets ?? 0),
+            totalTasksCompleted: Math.max(local.totalTasksCompleted, ru.totalTasksCompleted ?? 0),
+            streak: Math.max(local.streak, ru.streak ?? 0),
+          }
+        }
+        return ru.id === 'user1' ? { ...ru, isAdmin: true } : ru
+      })
+      useAuthStore.setState({ users: merged })
       const { currentUser } = useAuthStore.getState()
-      useAuthStore.setState({ users })
       if (currentUser) {
-        const updated = users.find(u => u.id === currentUser.id)
+        const updated = merged.find(u => u.id === currentUser.id)
         if (updated) useAuthStore.setState({ currentUser: updated })
       }
     }
