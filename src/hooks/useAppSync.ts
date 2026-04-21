@@ -26,10 +26,36 @@ function schedPush(key: string) {
   }, 500)
 }
 
-function mergeById<T extends { id: string | number }>(remote: T[], local: T[]): T[] {
-  const localIds = new Set(local.map(item => item.id))
-  const remoteOnly = remote.filter(item => !localIds.has(item.id))
-  return [...local, ...remoteOnly]
+function mergeItems<T extends { id: string | number }>(
+  remote: T[],
+  local: T[],
+  pickBest?: (r: T, l: T) => T
+): T[] {
+  const localMap = new Map(local.map(item => [item.id, item]))
+  const merged: T[] = []
+  const seenIds = new Set<string | number>()
+
+  for (const r of remote) {
+    seenIds.add(r.id)
+    const l = localMap.get(r.id)
+    if (l && pickBest) {
+      merged.push(pickBest(r, l))
+    } else {
+      merged.push(l ?? r)
+    }
+  }
+  for (const l of local) {
+    if (!seenIds.has(l.id)) merged.push(l)
+  }
+  return merged
+}
+
+function pickBestTask(r: import('../types').Task, l: import('../types').Task) {
+  if (l.status === 'completed') return l
+  if (r.status === 'completed') return r
+  if (l.status === 'in_progress') return l
+  if (r.status === 'in_progress') return r
+  return r
 }
 
 function applyRemote(key: string, value: unknown) {
@@ -46,14 +72,8 @@ function applyRemote(key: string, value: unknown) {
         if (local) {
           return {
             ...ru,
-            pin: local.pin,
-            name: local.name,
-            avatar: local.avatar,
             isAdmin: ru.id === 'user1',
-            points: Math.max(local.points, ru.points ?? 0),
-            tickets: Math.max(local.tickets, ru.tickets ?? 0),
-            totalTasksCompleted: Math.max(local.totalTasksCompleted, ru.totalTasksCompleted ?? 0),
-            streak: Math.max(local.streak, ru.streak ?? 0),
+            totalTasksCompleted: Math.max(local.totalTasksCompleted ?? 0, ru.totalTasksCompleted ?? 0),
           }
         }
         return ru.id === 'user1' ? { ...ru, isAdmin: true } : ru
@@ -69,14 +89,14 @@ function applyRemote(key: string, value: unknown) {
       const v = value as { tasks: import('../types').Task[] }
       if (!v.tasks) return
       const local = useTaskStore.getState().tasks
-      const merged = mergeById(v.tasks, local)
+      const merged = mergeItems(v.tasks, local, pickBestTask)
       useTaskStore.setState({ tasks: merged })
     }
     if (key === 'forus-lottery') {
       const v = value as { records: import('../types').LotteryRecord[] }
       if (!v.records) return
       const local = useLotteryStore.getState().records
-      const merged = mergeById(v.records, local)
+      const merged = mergeItems(v.records, local)
       useLotteryStore.setState({ records: merged })
     }
     if (key === 'forus-prizes') {
@@ -88,13 +108,13 @@ function applyRemote(key: string, value: unknown) {
       const v = value as { wishes: import('../types').WishItem[] }
       if (!v.wishes) return
       const local = useWishStore.getState().wishes
-      useWishStore.setState({ wishes: mergeById(v.wishes, local) })
+      useWishStore.setState({ wishes: mergeItems(v.wishes, local) })
     }
     if (key === 'forus-reminders') {
       const v = value as { reminders: import('../types').Reminder[] }
       if (!v.reminders) return
       const local = useReminderStore.getState().reminders
-      useReminderStore.setState({ reminders: mergeById(v.reminders, local) })
+      useReminderStore.setState({ reminders: mergeItems(v.reminders, local) })
     }
   } finally {
     setTimeout(() => { syncing = false }, 200)
