@@ -36,6 +36,7 @@ interface AuthStore {
   login: (name: string, pin: string) => boolean
   logout: () => void
   addTickets: (userId: string, amount: number) => void
+  setTickets: (userId: string, count: number) => void
   useTickets: (userId: string, amount: number) => boolean
   addPoints: (userId: string, amount: number) => void
   updateStreak: (userId: string) => void
@@ -76,6 +77,17 @@ export const useAuthStore = create<AuthStore>()(
           ),
           currentUser: state.currentUser?.id === userId
             ? { ...state.currentUser, tickets: state.currentUser.tickets + amount }
+            : state.currentUser,
+        }))
+      },
+
+      setTickets: (userId, count) => {
+        set(state => ({
+          users: state.users.map(u =>
+            u.id === userId ? { ...u, tickets: count } : u
+          ),
+          currentUser: state.currentUser?.id === userId
+            ? { ...state.currentUser, tickets: count }
             : state.currentUser,
         }))
       },

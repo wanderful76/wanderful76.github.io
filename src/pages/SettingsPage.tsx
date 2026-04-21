@@ -121,7 +121,7 @@ function BadgesSection({ tasks, streak, draws }: { tasks: number; streak: number
 }
 
 export default function SettingsPage() {
-  const { currentUser, users, updatePin, updateName, updateAvatar, addTickets, resetSeenAchievements, setTotalTasksCompleted } = useAuthStore()
+  const { currentUser, users, updatePin, updateName, updateAvatar, addTickets, setTickets, resetSeenAchievements, setTotalTasksCompleted } = useAuthStore()
   const { tasks, deleteTask } = useTaskStore()
   const { records } = useLotteryStore()
   const { prizes, addPrize, deletePrize } = usePrizeStore()
@@ -140,6 +140,7 @@ export default function SettingsPage() {
   const [adminEditId, setAdminEditId]     = useState<string | null>(null)
   const [adminName, setAdminName]         = useState('')
   const [adminPin, setAdminPin]           = useState('')
+  const [adminTickets, setAdminTickets]   = useState('')
   const [newPrizeName, setNewPrizeName]   = useState('')
   const [newPrizeCat, setNewPrizeCat]     = useState<PrizeCategory>('snack')
   const [newPrizeEmoji, setNewPrizeEmoji] = useState('')
@@ -376,9 +377,9 @@ export default function SettingsPage() {
             <div className="space-y-3">
               {users.map(u => (
                 <div key={u.id} className="border border-rose-100 rounded-xl p-3">
-                  <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center justify-between">
                     <span className="font-medium text-gray-700">{u.avatar} {u.name}{u.isAdmin && <span className="ml-1 text-xs text-purple-500">(管理员)</span>}</span>
-                    <button onClick={() => { setAdminEditId(adminEditId === u.id ? null : u.id); setAdminName(u.name); setAdminPin('') }}
+                    <button onClick={() => { setAdminEditId(adminEditId === u.id ? null : u.id); setAdminName(u.name); setAdminPin(''); setAdminTickets(String(u.tickets)) }}
                       className="text-xs text-rose-400 hover:text-rose-600">
                       {adminEditId === u.id ? '收起' : '编辑'}
                     </button>
@@ -394,25 +395,29 @@ export default function SettingsPage() {
                         placeholder="昵称" className="input-field text-sm py-1.5" />
                       <input type="text" value={adminPin} onChange={e => setAdminPin(e.target.value)}
                         placeholder="新 PIN 码（留空不修改）" className="input-field text-sm py-1.5" maxLength={8} />
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-500">🎟️ 抽奖券</span>
+                        <input type="number" value={adminTickets} onChange={e => setAdminTickets(e.target.value)}
+                          className="input-field text-sm py-1.5 w-20 text-center" min={0} />
+                        <span className="text-xs text-gray-400">张</span>
+                      </div>
                       <button onClick={() => {
                         if (adminName.trim()) updateName(u.id, adminName.trim())
                         if (adminPin.length >= 4) updatePin(u.id, adminPin)
+                        const ticketNum = parseInt(adminTickets)
+                        if (!isNaN(ticketNum) && ticketNum >= 0) setTickets(u.id, ticketNum)
                         setAdminEditId(null)
                         showToast('已保存 ✅')
                       }} className="btn-primary w-full py-1.5 text-sm flex items-center justify-center gap-1">
                         <Save size={13} /> 保存
                       </button>
                       <div className="flex gap-2 pt-1">
-                        <button onClick={() => { addTickets(u.id, 10); showToast(`已给 ${u.name} 补发 10 张抽奖券 🎟️`) }}
-                          className="flex-1 btn-secondary py-1.5 text-xs">
-                          🎟️ 补发 10 张券
-                        </button>
                         <button onClick={() => {
                           resetSeenAchievements(u.id)
                           setTotalTasksCompleted(u.id, 0)
                           showToast(`已重置 ${u.name} 的成就与任务计数 🔄`)
                         }}
-                          className="flex-1 py-1.5 text-xs rounded-xl border border-amber-300 text-amber-600 hover:bg-amber-50 transition-colors">
+                          className="flex-1 btn-secondary py-1.5 text-xs">
                           🔄 重置成就
                         </button>
                       </div>
