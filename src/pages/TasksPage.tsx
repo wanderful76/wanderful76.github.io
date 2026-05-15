@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Trash2, CheckCircle2, PlayCircle, RotateCcw, X } from 'lucide-react'
+import { Plus, Trash2, CheckCircle2, PlayCircle, RotateCcw, X, Pencil } from 'lucide-react'
 import { useAuthStore } from '../store/useAuthStore'
 import { useTaskStore } from '../store/useTaskStore'
 import { useLotteryStore } from '../store/useLotteryStore'
@@ -28,7 +28,7 @@ const defaultForm = {
 
 export default function TasksPage() {
   const { currentUser, users, addTickets, addPoints, updateStreak, incrementTasksCompleted } = useAuthStore()
-  const { tasks, addTask, deleteTask, completeTask, setInProgress } = useTaskStore()
+  const { tasks, addTask, updateTask, deleteTask, completeTask, setInProgress } = useTaskStore()
   const { records } = useLotteryStore()
 
   const myDraws = records.filter(r => r.userId === currentUser?.id).length
@@ -42,6 +42,8 @@ export default function TasksPage() {
   const [form, setForm] = useState(defaultForm)
   const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('all')
   const [toast, setToast] = useState<{ msg: string; emoji: string } | null>(null)
+  const [editingTask, setEditingTask] = useState<string | null>(null)
+  const [editForm, setEditForm] = useState(defaultForm)
 
   const showToast = (msg: string, emoji: string) => {
     setToast({ msg, emoji })
@@ -75,6 +77,35 @@ export default function TasksPage() {
     setForm(defaultForm)
     setShowForm(false)
     showToast('任务已添加！', '✅')
+  }
+
+  const openEdit = (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId)
+    if (!task) return
+    setEditForm({
+      title: task.title,
+      description: task.description || '',
+      points: task.points,
+      repeat: task.repeat,
+      category: task.category,
+      deadline: task.deadline || '',
+    })
+    setEditingTask(taskId)
+  }
+
+  const handleEdit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editForm.title.trim() || !editingTask) return
+    updateTask(editingTask, {
+      title: editForm.title.trim(),
+      description: editForm.description.trim(),
+      points: editForm.points,
+      repeat: editForm.repeat,
+      category: editForm.category,
+      deadline: editForm.deadline || undefined,
+    })
+    setEditingTask(null)
+    showToast('任务已更新！', '✏️')
   }
 
   const applyFilter = (list: typeof tasks) =>
@@ -188,6 +219,12 @@ export default function TasksPage() {
                           <CheckCircle2 size={15} />
                         </button>
                       )}
+                      {task.status !== 'completed' && (
+                        <button onClick={() => openEdit(task.id)}
+                          className="p-1 rounded-lg text-blue-400 hover:bg-blue-50 transition-colors" title="编辑">
+                          <Pencil size={13} />
+                        </button>
+                      )}
                       <button onClick={() => deleteTask(task.id)}
                         className="p-1 rounded-lg text-red-300 hover:bg-red-50 hover:text-red-400 transition-colors" title="删除">
                         <Trash2 size={13} />
@@ -262,6 +299,73 @@ export default function TasksPage() {
                 <div className="flex gap-3 pt-1">
                   <button type="button" onClick={() => setShowForm(false)} className="btn-secondary flex-1">取消</button>
                   <button type="submit" className="btn-primary flex-1">添加任务</button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Edit task modal */}
+      <AnimatePresence>
+        {editingTask && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-4"
+            onClick={e => e.target === e.currentTarget && setEditingTask(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 40 }}
+              className="glass-card w-full max-w-md p-6"
+            >
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                  ✏️ 编辑任务
+                </h2>
+                <button onClick={() => setEditingTask(null)} className="p-1.5 rounded-xl hover:bg-gray-100 text-gray-400">
+                  <X size={18} />
+                </button>
+              </div>
+
+              <form onSubmit={handleEdit} className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">任务名称 *</label>
+                  <input type="text" value={editForm.title} onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))}
+                    placeholder="例如：背 20 个单词" className="input-field" required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">任务描述</label>
+                  <input type="text" value={editForm.description} onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))}
+                    placeholder="可选说明" className="input-field" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-1">类别</label>
+                    <select value={editForm.category} onChange={e => setEditForm(f => ({ ...f, category: e.target.value as TaskCategory }))}
+                      className="input-field">
+                      {(Object.keys(categoryConfig) as TaskCategory[]).map(c => (
+                        <option key={c} value={c}>{categoryConfig[c].emoji} {categoryConfig[c].label}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-600 mb-1">重复</label>
+                    <select value={editForm.repeat} onChange={e => setEditForm(f => ({ ...f, repeat: e.target.value as TaskRepeat }))}
+                      className="input-field">
+                      <option value="daily">每日</option>
+                      <option value="weekly">每周</option>
+                      <option value="once">单次</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">截止日期</label>
+                  <input type="date" value={editForm.deadline} onChange={e => setEditForm(f => ({ ...f, deadline: e.target.value }))}
+                    className="input-field" />
+                </div>
+                <div className="flex gap-3 pt-1">
+                  <button type="button" onClick={() => setEditingTask(null)} className="btn-secondary flex-1">取消</button>
+                  <button type="submit" className="btn-primary flex-1">保存修改</button>
                 </div>
               </form>
             </motion.div>
