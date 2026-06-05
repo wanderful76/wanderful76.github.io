@@ -12,12 +12,21 @@ import type { LotteryRecord } from '../types'
 type Phase = 'idle' | 'shaking' | 'opening' | 'revealed'
 
 export default function LotteryPage() {
-  const { currentUser, useTickets } = useAuthStore()
+  const { currentUser, users, useTickets } = useAuthStore()
   const { draw, records, claimPrize } = useLotteryStore()
   const [phase, setPhase] = useState<Phase>('idle')
   const [result, setResult] = useState<LotteryRecord | null>(null)
   const [error, setError] = useState('')
+  const [recordFilter, setRecordFilter] = useState<'me' | 'partner' | 'all'>('me')
+  const partner = users.find(u => u.id !== currentUser?.id)
   const myRecords = records.filter(r => r.userId === currentUser?.id)
+
+  const displayedRecords =
+    recordFilter === 'me'
+      ? myRecords
+      : recordFilter === 'partner'
+        ? records.filter(r => r.userId === partner?.id)
+        : records
 
   const { current: newAch, dismiss: dismissAch } = useAchievementNotify(
     currentUser?.totalTasksCompleted ?? 0,
@@ -179,16 +188,44 @@ export default function LotteryPage() {
 
       {/* History */}
       <div className="glass-card p-5">
-        <h2 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
-          🎀 抽奖记录
-          <LoveQuoteSpot quote={loveQuotes[18]} icon="🌸" />
-        </h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-semibold text-gray-700 flex items-center gap-2">
+            🎀 抽奖记录
+            <LoveQuoteSpot quote={loveQuotes[18]} icon="🌸" />
+          </h2>
+          <div className="flex items-center gap-1 text-xs bg-gray-50 rounded-full p-0.5">
+            <button
+              onClick={() => setRecordFilter('me')}
+              className={`px-2.5 py-1 rounded-full transition-colors ${recordFilter === 'me' ? 'bg-rose-500 text-white' : 'text-gray-500'}`}
+            >
+              我
+            </button>
+            {partner && (
+              <button
+                onClick={() => setRecordFilter('partner')}
+                className={`px-2.5 py-1 rounded-full transition-colors ${recordFilter === 'partner' ? 'bg-rose-500 text-white' : 'text-gray-500'}`}
+              >
+                {partner.name}
+              </button>
+            )}
+            <button
+              onClick={() => setRecordFilter('all')}
+              className={`px-2.5 py-1 rounded-full transition-colors ${recordFilter === 'all' ? 'bg-rose-100 text-rose-600' : 'text-gray-400'}`}
+            >
+              全部
+            </button>
+          </div>
+        </div>
 
-        {myRecords.length === 0 ? (
-          <p className="text-center text-gray-400 text-sm py-4">还没有抽奖记录，快去完成任务吧！</p>
+        {displayedRecords.length === 0 ? (
+          <p className="text-center text-gray-400 text-sm py-4">
+            {recordFilter === 'me' && '还没有抽奖记录，快去完成任务吧！'}
+            {recordFilter === 'partner' && partner && `${partner.name} 还没有抽奖记录~`}
+            {recordFilter === 'all' && '还没有任何抽奖记录~'}
+          </p>
         ) : (
           <div className="space-y-2 max-h-72 overflow-y-auto scrollbar-hide">
-            {myRecords.map(r => {
+            {displayedRecords.map(r => {
               const cfg = prizeCategoryConfig[r.prizeCategory]
               return (
                 <div key={r.id} className="flex items-center gap-3 p-2.5 rounded-xl bg-gray-50/80 hover:bg-rose-50/50 transition-colors">
@@ -198,6 +235,7 @@ export default function LotteryPage() {
                     <div className="flex items-center gap-2 mt-0.5">
                       <span className={`badge ${cfg.bg} ${cfg.color}`}>{cfg.label}</span>
                       <span className="text-xs text-gray-400">{new Date(r.date).toLocaleDateString('zh-CN')}</span>
+                      <span className="text-xs text-gray-400 truncate max-w-[6rem]">{r.userName}</span>
                     </div>
                   </div>
                   {r.claimed
